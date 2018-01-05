@@ -1,6 +1,8 @@
 #define DEFAULT_WIFI_SSID "il-mio-ssid"
 #define DEFAULT_WIFI_PASS "password"
 
+// (atrent) potresti prevedere un "fallback mode" che attiva un AP
+
 void wifi_setup() {
   WiFi.begin(DEFAULT_WIFI_SSID, DEFAULT_WIFI_PASS);
 }

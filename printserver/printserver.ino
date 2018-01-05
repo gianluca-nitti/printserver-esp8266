@@ -32,7 +32,7 @@ void printDataFromClient(WiFiClient c) {
     if (c.available()) {
       byte b = c.read();
       Serial.write(b);
-      parallelPort_printByte(b);
+      parallelPort_printByte(b); // (atrent) disaccoppierei qui, applicando un pattern di delega in modo da poter configurare a posteriori anche una stampante seriale o USB
     }
   }
 }

@@ -2,10 +2,17 @@
 #include <WiFiClient.h>
 #include <WiFiServer.h>
 #include "TcpPrintServer.h"
+#include "DirectParallelPortPrinter.h"
+#include "SerialPortPrinter.h"
 
+#define STROBE 10
+#define BUSY 9
 #define TCP_SERVER_PORT 12345
-//WiFiServer tcpServer(TCP_SERVER_PORT);
-TcpPrintServer server(TCP_SERVER_PORT);
+int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
+
+//DirectParallelPortPrinter printer(DATA, STROBE, BUSY);
+SerialPortPrinter printer(&Serial);
+TcpPrintServer server(TCP_SERVER_PORT, &printer);
 
 void setup() {
   Serial.begin(115200);
@@ -21,13 +28,6 @@ void setup() {
 void loop() {
   printDebugAndYield();
   server.process();
-  /*WiFiClient c = tcpServer.available();
-  if (c) {
-    Serial.println("---client " + c.remoteIP().toString() + ":" + c.remotePort() + " connected");
-    printDataFromClient(c);
-    c.stop();
-    Serial.println("---connection closed---");
-  }*/
 }
 
 inline void printDebugAndYield() {
@@ -37,15 +37,5 @@ inline void printDebugAndYield() {
     server.printInfo();
     yield();
     lastCall = millis();
-  }
-}
-
-void printDataFromClient(WiFiClient c) {
-  while (c.connected()) {
-    if (c.available()) {
-      byte b = c.read();
-      Serial.write(b);
-      parallelPort_printByte(b);
-    }
   }
 }

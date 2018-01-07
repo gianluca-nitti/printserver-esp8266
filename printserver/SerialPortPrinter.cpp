@@ -1,6 +1,6 @@
 #include "SerialPortPrinter.h"
 
-SerialPortPrinter::SerialPortPrinter(Stream* s) {
+SerialPortPrinter::SerialPortPrinter(String _printerId, Stream* s): Printer(_printerId) {
   stream = s;
 }
 

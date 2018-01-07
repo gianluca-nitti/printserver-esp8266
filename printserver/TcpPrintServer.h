@@ -2,9 +2,8 @@
 #include <Arduino.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
+#include "Settings.h"
 #include "Printer.h"
-
-#define MAXCLIENTS 16
 
 class TcpPrintServer {
   private:

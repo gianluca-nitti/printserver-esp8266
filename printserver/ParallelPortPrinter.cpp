@@ -2,7 +2,7 @@
 
 #define STROBE_DELAY 10
 
-ParallelPortPrinter::ParallelPortPrinter(int _strobePin, int _busyPin) {
+ParallelPortPrinter::ParallelPortPrinter(String _printerId, int _strobePin, int _busyPin): Printer(_printerId) {
   strobePin = _strobePin;
   busyPin = _busyPin;
   pinMode(busyPin, INPUT);

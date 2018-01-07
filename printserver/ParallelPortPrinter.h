@@ -6,7 +6,7 @@ class ParallelPortPrinter: public Printer {
     int strobePin;
     int busyPin;
   protected:
-    ParallelPortPrinter(int _strobePin, int _busyPin);
+    ParallelPortPrinter(String _printerId, int _strobePin, int _busyPin);
     bool canPrint();
     void printByte(byte b);
     virtual void setDataBus(byte b) = 0;

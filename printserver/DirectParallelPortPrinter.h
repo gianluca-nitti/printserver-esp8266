@@ -7,5 +7,5 @@ class DirectParallelPortPrinter: public ParallelPortPrinter {
   protected:
     void setDataBus(byte b);
   public:
-    DirectParallelPortPrinter(int _dataPins[8], int _strobePin, int _busyPin);
+    DirectParallelPortPrinter(String _printerId, int _dataPins[8], int _strobePin, int _busyPin);
 };

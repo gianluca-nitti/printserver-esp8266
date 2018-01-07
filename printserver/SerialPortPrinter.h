@@ -8,6 +8,6 @@ class SerialPortPrinter: public Printer {
     bool canPrint();
     void printByte(byte b);
   public:
-    SerialPortPrinter(Stream* s);
+    SerialPortPrinter(String _printerId, Stream* s);
     String getInfo();
 };

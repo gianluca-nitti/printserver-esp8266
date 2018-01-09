@@ -22,7 +22,6 @@ void setup() {
   Serial.println("boot ok");
   SPIFFS.begin();
   printer.init();
-  parallelPort_setup();
   wifi_setup();
   wifi_waitOnline();
   //tcpServer.begin();

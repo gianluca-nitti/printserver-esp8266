@@ -1,38 +1,52 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
+#include <FS.h>
 
+#include "TcpPrintServer.h"
+#include "DirectParallelPortPrinter.h"
+#include "SerialPortPrinter.h"
+#include "PrintQueue.h"
+
+#define STROBE 10
+#define BUSY 9
 #define TCP_SERVER_PORT 12345
-WiFiServer tcpServer(TCP_SERVER_PORT);
+int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
+
+DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);
+//SerialPortPrinter printer("serial", &Serial);
+TcpPrintServer server(TCP_SERVER_PORT, &printer);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("boot ok");
-  parallelPort_setup();
+  SPIFFS.begin();
+  printer.init();
   wifi_setup();
   wifi_waitOnline();
-  tcpServer.begin();
+  //tcpServer.begin();
+  server.start();
   Serial.println("setup ok");
 }
 
 void loop() {
-  Serial.println(wifi_info());
-  WiFiClient c = tcpServer.available();
-  if (c) {
-    Serial.println("---client " + c.remoteIP().toString() + ":" + c.remotePort() + " connected");
-    printDataFromClient(c);
-    c.stop();
-    Serial.println("---connection closed---");
-  }
-  delay(1000);
+  printDebugAndYield();
+  server.process();
+  printer.processQueue();
 }
 
-void printDataFromClient(WiFiClient c) {
-  while (c.connected()) {
-    if (c.available()) {
-      byte b = c.read();
-      Serial.write(b);
-      parallelPort_printByte(b); // (atrent) disaccoppierei qui, applicando un pattern di delega in modo da poter configurare a posteriori anche una stampante seriale o USB
-    }
+inline void printDebugAndYield() {
+  static unsigned long lastCall = 0;
+  if (millis() - lastCall > 5000) {
+    Serial.println(wifi_info());
+    server.printInfo();
+    FSInfo fsinfo;
+    SPIFFS.info(fsinfo);
+    Serial.printf("Total bytes: %d, Used bytes: %d, Max open files: %d\n", fsinfo.totalBytes, fsinfo.usedBytes, fsinfo.maxOpenFiles);
+
+    PrintQueue::updateAvailableFlashSpace();
+    yield();
+
+    lastCall = millis();
   }
 }

@@ -1,11 +1,20 @@
 #include "PrintQueue.h"
 
+size_t PrintQueue::availableFlashSpace = 0;
+
+void PrintQueue::updateAvailableFlashSpace() {
+  FSInfo fsinfo;
+  SPIFFS.info(fsinfo);
+  availableFlashSpace = fsinfo.totalBytes - fsinfo.usedBytes;
+}
+
 PrintQueue::PrintQueue(String _printerId) {
   printerId = _printerId;
 }
 
 void PrintQueue::init() {
   loadInfo();
+  updateAvailableFlashSpace();
 }
 
 void PrintQueue::saveInfo() {
@@ -33,12 +42,25 @@ void PrintQueue::startJob(int clientId) {
   saveInfo();
 }
 
-void PrintQueue::endJob(int clientId) {
+void PrintQueue::endJob(int clientId, bool cancel) {
+  String fName = fileWriters[clientId].name();
   fileWriters[clientId].close();
+  if (cancel) {
+    if(!SPIFFS.remove(fName)) {
+      Serial.println("Warning: failed to remove " + fName);
+    }
+  } else {
+    SPIFFS.rename(fName, fName + "OK");
+  }
+}
+
+bool PrintQueue::canStoreByte() {
+  return availableFlashSpace > 4096; //4KiB margin
 }
 
 void PrintQueue::printByte(int clientId, byte b) {
   fileWriters[clientId].write(b);
+  availableFlashSpace--;
 }
 
 bool PrintQueue::hasData() {
@@ -48,13 +70,15 @@ bool PrintQueue::hasData() {
     if (fileReader) {
       String fName = fileReader.name();
       fileReader.close();
-      //SPIFFS.remove(fName); //non qua, potrebbe essere ancora aperto in scrittura
+      if(!SPIFFS.remove(fName)) {
+        Serial.println("Warning: failed to remove " + fName);
+      }
     }
-    if (head == tail) {
+    if (head == tail || SPIFFS.exists(printerId + String(tail + 1))) {
       return false;
     } else {
       tail++;
-      fileReader = SPIFFS.open(printerId + String(tail), "r");
+      fileReader = SPIFFS.open(printerId + String(tail) + "OK", "r");
       saveInfo();
       return fileReader.available() > 0;
     }

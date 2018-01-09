@@ -2,9 +2,11 @@
 #include <WiFiClient.h>
 #include <WiFiServer.h>
 #include <FS.h>
+
 #include "TcpPrintServer.h"
 #include "DirectParallelPortPrinter.h"
 #include "SerialPortPrinter.h"
+#include "PrintQueue.h"
 
 #define STROBE 10
 #define BUSY 9
@@ -42,7 +44,10 @@ inline void printDebugAndYield() {
     FSInfo fsinfo;
     SPIFFS.info(fsinfo);
     Serial.printf("Total bytes: %d, Used bytes: %d, Max open files: %d\n", fsinfo.totalBytes, fsinfo.usedBytes, fsinfo.maxOpenFiles);
+
+    PrintQueue::updateAvailableFlashSpace();
     yield();
+
     lastCall = millis();
   }
 }

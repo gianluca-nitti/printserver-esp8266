@@ -20,11 +20,11 @@ void Printer::startJob(int clientId) {
   }
 }
 
-void Printer::endJob(int clientId) {
+void Printer::endJob(int clientId, bool cancel) {
   if (status == PRINTING_FROM_SERVER && printingClientId == clientId) {
     status = IDLE;
   } else {
-    queue.endJob(clientId);
+    queue.endJob(clientId, cancel);
   }
 }
 
@@ -32,7 +32,7 @@ bool Printer::canPrint(int clientId) {
   if (status == PRINTING_FROM_SERVER && printingClientId == clientId) {
     return canPrint();
   } else {
-    return true;
+    return queue.canStoreByte();
   }
 }
 

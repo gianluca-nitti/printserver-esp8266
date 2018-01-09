@@ -5,10 +5,15 @@
 #include "Settings.h"
 #include "Printer.h"
 
+typedef struct {
+  WiFiClient connection;
+  unsigned long lastInteraction;
+} client_t;
+
 class TcpPrintServer {
   private:
     WiFiServer server;
-    WiFiClient clients[MAXCLIENTS];
+    client_t clients[MAXCLIENTS];
     Printer* printer;
     void handleClient(int index);
   public:

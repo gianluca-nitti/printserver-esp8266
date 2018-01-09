@@ -21,7 +21,7 @@ class Printer {
     void init();
     bool canAcceptJob(int size);
     void startJob(int clientId);
-    void endJob(int clientId);
+    void endJob(int clientId, bool cancel);
     bool canPrint(int clientId);
     void printByte(int clientId, byte b);
     void processQueue();

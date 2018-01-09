@@ -5,15 +5,21 @@ TcpPrintServer::TcpPrintServer(int port, Printer* p) : server(port) {
 }
 
 void TcpPrintServer::handleClient(int index) {
-  if (clients[index].connected()) {
-    if (clients[index].available() > 0 && printer->canPrint(index)) {
-      printer->printByte(index, clients[index].read());
+  if (clients[index].connection.connected()) {
+    if (clients[index].connection.available() > 0 && printer->canPrint(index)) {
+      printer->printByte(index, clients[index].connection.read());
+      clients[index].lastInteraction = millis();
+    } else if (millis() - clients[index].lastInteraction > JOB_TIMEOUT_MS) {
+      Serial.println("Cancelling print job and disconnecting client");
+      clients[index].connection.stop();
+      clients[index] = {WiFiClient(), 0};
+      printer->endJob(index, true);
     }
   } else {
     Serial.println("Disconnected");
-    clients[index].stop();
-    clients[index] = WiFiClient();
-    printer->endJob(index);
+    clients[index].connection.stop();
+    clients[index] = {WiFiClient(), 0};
+    printer->endJob(index, false);
   }
 }
 
@@ -24,7 +30,7 @@ void TcpPrintServer::start() {
 void TcpPrintServer::process() {
   int freeClientSlot = -1;
   for (int i = 0; i < MAXCLIENTS; i++) {
-    if (clients[i]) {
+    if (clients[i].connection) {
       handleClient(i);
     } else {
       freeClientSlot = i;
@@ -34,7 +40,7 @@ void TcpPrintServer::process() {
     WiFiClient newClient = server.available();
     if (newClient) {
       Serial.println("Connected: " + newClient.remoteIP().toString() + ":" + newClient.remotePort());
-      clients[freeClientSlot] = newClient;
+      clients[freeClientSlot] = {newClient, millis()};
       printer->startJob(freeClientSlot);
     }
   }
@@ -43,7 +49,7 @@ void TcpPrintServer::process() {
 void TcpPrintServer::printInfo() {
   int usedSlots = 0;
   for (int i = 0; i < MAXCLIENTS; i++) {
-    if (clients[i]) {
+    if (clients[i].connection) {
       usedSlots++;
     }
   }

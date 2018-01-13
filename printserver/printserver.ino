@@ -16,19 +16,18 @@
 int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);*/
 
-/*#define LPT_DATA D2
+#define LPT_DATA D2
 #define LPT_LATCH D3
 #define LPT_CLK D4
 #define LPT_BUSY D5
 #define LPT_STROBE D6
-ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);*/
+ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);
 
-SerialPortPrinter printer("serial", &Serial);
+//SerialPortPrinter printer("serial", &Serial);
 
 TcpPrintServer server(TCP_SERVER_PORT, &printer);
 
 void setup() {
-//  pinMode(LPT_BUSY, INPUT);
   Serial.begin(115200);
   Serial.println("boot ok");
   SPIFFS.begin();
@@ -49,8 +48,6 @@ void loop() {
 inline void printDebugAndYield() {
   static unsigned long lastCall = 0;
   if (millis() - lastCall > 5000) {
-//    Serial.print("BUSY: ");
-//    Serial.println(digitalRead(LPT_BUSY));
     Serial.println(wifi_info());
     server.printInfo();
     FSInfo fsinfo;

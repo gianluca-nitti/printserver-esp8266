@@ -10,14 +10,22 @@ typedef struct {
   unsigned long lastInteraction;
 } client_t;
 
+typedef struct {
+  bool parseSuccess;
+  String httpMethod;
+  String path;
+} http_req_t;
+
 class TcpPrintServer {
   private:
-    WiFiServer server;
+    WiFiServer socketServer;
+    WiFiServer httpServer;
     client_t clients[MAXCLIENTS];
     Printer* printer;
     void handleClient(int index);
+    http_req_t parseHttpRequest(WiFiClient* c);
   public:
-    TcpPrintServer(int port, Printer* p);
+    TcpPrintServer(Printer* p);
     void start();
     void process();
     void printInfo();

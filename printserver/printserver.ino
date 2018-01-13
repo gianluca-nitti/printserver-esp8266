@@ -9,8 +9,6 @@
 #include "SerialPortPrinter.h"
 #include "PrintQueue.h"
 
-#define TCP_SERVER_PORT 12345
-
 /*#define STROBE 10
 #define BUSY 9
 int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
@@ -25,7 +23,7 @@ ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_ST
 
 //SerialPortPrinter printer("serial", &Serial);
 
-TcpPrintServer server(TCP_SERVER_PORT, &printer);
+TcpPrintServer server(&printer);
 
 void setup() {
   Serial.begin(115200);

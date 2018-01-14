@@ -3,6 +3,7 @@
 #include <WiFiServer.h>
 #include <FS.h>
 
+#include "WiFiManager.h"
 #include "TcpPrintServer.h"
 #include "DirectParallelPortPrinter.h"
 #include "ShiftRegParallelPortPrinter.h"
@@ -30,8 +31,7 @@ void setup() {
   Serial.println("boot ok");
   SPIFFS.begin();
   printer.init();
-  wifi_setup();
-  wifi_waitOnline();
+  WiFiManager::wifi_setup();
   //tcpServer.begin();
   server.start();
   Serial.println("setup ok");
@@ -46,7 +46,7 @@ void loop() {
 inline void printDebugAndYield() {
   static unsigned long lastCall = 0;
   if (millis() - lastCall > 5000) {
-    Serial.println(wifi_info());
+    Serial.println(WiFiManager::info());
     server.printInfo();
     FSInfo fsinfo;
     SPIFFS.info(fsinfo);

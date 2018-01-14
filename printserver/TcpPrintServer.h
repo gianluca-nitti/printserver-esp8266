@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
+#include <map>
 #include "Settings.h"
 #include "Printer.h"
 
@@ -24,6 +25,7 @@ class TcpPrintServer {
     Printer* printer;
     void handleClient(int index);
     http_req_t parseHttpRequest(WiFiClient* c);
+    std::map<String, String> parseHttpUrlencoded(WiFiClient* c);
   public:
     TcpPrintServer(Printer* p);
     void start();

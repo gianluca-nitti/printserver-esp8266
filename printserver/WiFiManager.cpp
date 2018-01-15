@@ -33,7 +33,7 @@ String WiFiManager::info() {
   if (apEnabled) {
     return "Access point mode, IP = " + WiFi.softAPIP().toString();
   } else if (WiFi.status() == WL_CONNECTED) {
-    return "Online, IP = " + WiFi.localIP().toString() + ", signal = " + WiFi.RSSI() + "dBm";
+    return "Connected to " + WiFi.SSID() + ", IP = " + WiFi.localIP().toString() + ", signal = " + WiFi.RSSI() + "dBm";
   } else {
     return "Offline";
   }
@@ -64,6 +64,7 @@ void WiFiManager::connectTo(String ssid, String password) {
     WiFi.softAPdisconnect(true);
     apEnabled = false;
   }
+  Serial.printf("Connecting to %s\r\n", ssid.c_str());
   WiFi.begin(ssid.c_str(), password.c_str());
   wifi_setup();
 }

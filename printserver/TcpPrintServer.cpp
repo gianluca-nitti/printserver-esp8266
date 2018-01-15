@@ -1,5 +1,6 @@
 #include "WiFiManager.h"
 #include "Settings.h"
+#include "Http.h"
 #include "TcpPrintServer.h"
 
 TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
@@ -53,7 +54,7 @@ void TcpPrintServer::process() {
   unsigned long startTime = millis();
   WiFiClient newHttpClient = httpServer.available();
   if (newHttpClient) {
-    http_req_t req = parseHttpRequest(&newHttpClient);
+    http_req_t req = Http::parseRequestHeader(&newHttpClient);
     if (req.parseSuccess && req.httpMethod == "GET" && req.path == "/") {
       newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>ESP8266 print server</h1><a href=\"/wifi\">WiFi configuration</a><br><a href=\"/printerInfo\">Printer Info</a>");
     } else if (req.parseSuccess && req.httpMethod == "GET" && req.path == "/printerInfo") {
@@ -68,7 +69,7 @@ void TcpPrintServer::process() {
       });
       newHttpClient.print("</ul>Password (leave blank for open networks): <input type=\"password\" name=\"password\"><input type=\"submit\" value=\"Connect\"></form>");
     } else if (req.parseSuccess && req.httpMethod == "POST" && req.path == "/wifi-connect") {
-      std::map<String, String> reqData = parseHttpUrlencoded(&newHttpClient);
+      std::map<String, String> reqData = Http::parseUrlencodedRequestBody(&newHttpClient, req.contentLength);
       newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>OK</h1>");
       newHttpClient.stop();
       WiFiManager::connectTo(reqData["SSID"].c_str(), reqData["password"]);
@@ -78,46 +79,6 @@ void TcpPrintServer::process() {
     newHttpClient.stop();
     Serial.println("HTTP client handled in " + String(millis() - startTime) + "ms");
   }
-}
-
-http_req_t TcpPrintServer::parseHttpRequest(WiFiClient* c) {
-  http_req_t result;
-  result.parseSuccess = false;
-  c->setTimeout(5000);
-  result.httpMethod = c->readStringUntil(' ');
-  if (result.httpMethod == "") {
-    return result;
-  }
-  result.path = c->readStringUntil(' ');
-  if (result.path == "") {
-    return result;
-  }
-
-  c->readStringUntil('\r');
-  c->read(); //consume the '\n'
-
-  String header;
-  while ((header = c->readStringUntil('\r')) != "") {
-    Serial.print("Received HTTP request header: ");
-    Serial.println(header);
-    c->read(); //consume the '\n'
-  }
-  c->read(); //consume the '\n'
-  Serial.println("Headers finished");
-
-  result.parseSuccess = true;
-  return result;
-}
-
-
-std::map<String, String> TcpPrintServer::parseHttpUrlencoded(WiFiClient* c) {
-  std::map<String, String> result;
-  for (int i = 0; i < 2; i++) { //TODO!!
-    String key = c->readStringUntil('=');
-    String value = c->readStringUntil('&');
-    result[key] = value;
-  }
-  return result;
 }
 
 void TcpPrintServer::printInfo() {

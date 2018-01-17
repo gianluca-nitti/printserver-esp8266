@@ -1,9 +1,10 @@
 #include "WiFiManager.h"
 #include "Settings.h"
 #include "Http.h"
+#include "Ipp.h"
 #include "TcpPrintServer.h"
 
-TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
+TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), ippServer(IPP_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
   printer = p;
 }
 
@@ -28,6 +29,7 @@ void TcpPrintServer::handleClient(int index) {
 
 void TcpPrintServer::start() {
   socketServer.begin();
+  ippServer.begin();
   httpServer.begin();
 }
 
@@ -48,6 +50,12 @@ void TcpPrintServer::process() {
       clients[freeClientSlot] = {newClient, millis()};
       printer->startJob(freeClientSlot);
     }
+  }
+
+  //ipp
+  WiFiClient ippClient = ippServer.available();
+  if (ippClient) {
+    Ipp::parseRequest(&ippClient);
   }
 
   //http

@@ -3,7 +3,8 @@
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
 #define CONTENT_LENGTH_HEADER "Content-Length: "
 
-char blockingRead(Stream* source) {
+byte Http::blockingRead(Stream* source) {
+  // TODO: timeout
   while (source->available() == 0) {
     yield();
   }

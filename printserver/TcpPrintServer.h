@@ -14,6 +14,7 @@ typedef struct {
 class TcpPrintServer {
   private:
     WiFiServer socketServer;
+    WiFiServer ippServer;
     WiFiServer httpServer;
     client_t clients[MAXCLIENTS];
     Printer* printer;

@@ -8,7 +8,7 @@ void HttpStream::waitAvailable(int numBytes) {
   unsigned long start = millis();
   while (tcpConnection->available() < numBytes) {
     delay(10);
-    if (millis() - start > HTTP_READ_TIMEOUT_MS) {
+    if (millis() - start > NETWORK_READ_TIMEOUT_MS) {
       timedOut = true;
       Serial.println("HTTP read timed out");
       tcpConnection->print("HTTP/1.1 408 Request Timeout\r\n\r\n");

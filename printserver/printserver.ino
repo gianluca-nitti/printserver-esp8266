@@ -15,14 +15,14 @@
 int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);*/
 
-#define LPT_DATA D2
+/*#define LPT_DATA D2
 #define LPT_LATCH D3
 #define LPT_CLK D4
 #define LPT_BUSY D5
 #define LPT_STROBE D6
-ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);
+ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);*/
 
-//SerialPortPrinter printer("serial", &Serial);
+SerialPortPrinter printer("serial", &Serial);
 
 TcpPrintServer server(&printer);
 
@@ -46,11 +46,12 @@ void loop() {
 inline void printDebugAndYield() {
   static unsigned long lastCall = 0;
   if (millis() - lastCall > 5000) {
+    Serial.printf("Free heap: %d bytes\r\n", ESP.getFreeHeap());
     Serial.println(WiFiManager::info());
     server.printInfo();
     FSInfo fsinfo;
     SPIFFS.info(fsinfo);
-    Serial.printf("Total bytes: %d, Used bytes: %d, Max open files: %d\n", fsinfo.totalBytes, fsinfo.usedBytes, fsinfo.maxOpenFiles);
+    Serial.printf("[Filesystem] Total bytes: %d, Used bytes: %d, Max open files: %d\r\n", fsinfo.totalBytes, fsinfo.usedBytes, fsinfo.maxOpenFiles);
 
     PrintQueue::updateAvailableFlashSpace();
     yield();

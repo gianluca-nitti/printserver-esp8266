@@ -6,23 +6,20 @@
 
 TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), ippServer(IPP_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
   printer = p;
+  for (int i = 0; i < MAXCLIENTS; i++) {
+    clients[i] = NULL;
+  }
 }
 
 void TcpPrintServer::handleClient(int index) {
-  if (clients[index].connection.connected()) {
-    if (clients[index].connection.available() > 0 && printer->canPrint(index)) {
-      printer->printByte(index, clients[index].connection.read());
-      clients[index].lastInteraction = millis();
-    } else if (millis() - clients[index].lastInteraction > JOB_TIMEOUT_MS) {
-      Serial.println("Cancelling print job and disconnecting client");
-      clients[index].connection.stop();
-      clients[index] = {WiFiClient(), 0};
-      printer->endJob(index, true);
-    }
+  if (clients[index]->connected()) {
+    if (clients[index]->hasMoreData() && printer->canPrint(index)) {
+      printer->printByte(index, clients[index]->read());
+    } //TODO timeout
   } else {
     Serial.println("Disconnected");
-    clients[index].connection.stop();
-    clients[index] = {WiFiClient(), 0};
+    delete clients[index];
+    clients[index] = NULL;
     printer->endJob(index, false);
   }
 }
@@ -33,11 +30,10 @@ void TcpPrintServer::start() {
   httpServer.begin();
 }
 
-void TcpPrintServer::process() {
-  // socket
+void TcpPrintServer::processSocketClients() {
   int freeClientSlot = -1;
   for (int i = 0; i < MAXCLIENTS; i++) {
-    if (clients[i].connection) {
+    if (clients[i] != NULL) {
       handleClient(i);
     } else {
       freeClientSlot = i;
@@ -47,19 +43,21 @@ void TcpPrintServer::process() {
     WiFiClient newClient = socketServer.available();
     if (newClient) {
       Serial.println("Connected: " + newClient.remoteIP().toString() + ":" + newClient.remotePort());
-      clients[freeClientSlot] = {newClient, millis()};
+      clients[freeClientSlot] = new TcpStream(newClient);
       printer->startJob(freeClientSlot);
     }
   }
+}
 
-  //ipp
+void TcpPrintServer::processIppClients() {
   WiFiClient _ippClient = ippServer.available();
   if (_ippClient) {
     HttpStream ippClient(&_ippClient);
     Ipp::parseRequest(ippClient);
   }
+}
 
-  //http
+void TcpPrintServer::processWebClients(){
   unsigned long startTime = millis();
   WiFiClient _httpClient = httpServer.available();
   if (_httpClient) {
@@ -95,10 +93,16 @@ void TcpPrintServer::process() {
   }
 }
 
+void TcpPrintServer::process() {
+  processSocketClients();
+  processIppClients();
+  processWebClients();
+}
+
 void TcpPrintServer::printInfo() {
   int usedSlots = 0;
   for (int i = 0; i < MAXCLIENTS; i++) {
-    if (clients[i].connection) {
+    if (clients[i] != NULL) {
       usedSlots++;
     }
   }

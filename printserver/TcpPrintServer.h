@@ -4,21 +4,22 @@
 #include <WiFiServer.h>
 #include <map>
 #include "Settings.h"
+#include "TcpStream.h"
 #include "Printer.h"
-
-typedef struct {
-  WiFiClient connection;
-  unsigned long lastInteraction;
-} client_t;
 
 class TcpPrintServer {
   private:
     WiFiServer socketServer;
     WiFiServer ippServer;
     WiFiServer httpServer;
-    client_t clients[MAXCLIENTS];
+    TcpStream* clients[MAXCLIENTS];
     Printer* printer;
+
     void handleClient(int index);
+
+    void processSocketClients();
+    void processIppClients();
+    void processWebClients();
   public:
     TcpPrintServer(Printer* p);
     void start();

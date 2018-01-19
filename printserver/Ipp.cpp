@@ -81,7 +81,7 @@ void Ipp::parseRequest(HttpStream& c) {
             writeAttribute(c, IPP_VALUE_TAG_UNSUPPORTED, attributeName, "unsupported");
           }
           c.write(IPP_END_OF_ATTRIBUTES_TAG);
-          c.stop();
+          //c.stop();
           break;
         case IPP_PRINT_JOB:
           Serial.println("Operation is Print-Job; reading job data...");
@@ -91,21 +91,21 @@ void Ipp::parseRequest(HttpStream& c) {
             yield();
           }
           Serial.println("End of job data");
-          c.stop(); //TODO REMOVE!!
+          //c.stop(); //TODO REMOVE!!
           break;
         default:
           // TODO: report that operation is not supported
           Serial.println("The requested operation is not supported!");
-          c.stop();
+          //c.stop();
       }
     } else {
       Serial.println("Unsupported IPP version");
       beginResponse(c, IPP_ERROR_VERSION_NOT_SUPPORTED, requestId);
       c.write(IPP_END_OF_ATTRIBUTES_TAG);
-      c.stop();
+      //c.stop();
     }
   } else {
     c.print("HTTP/1.1 400 Bad Request\r\n\r\n");
-    c.stop();
+    //c.stop();
   }
 }

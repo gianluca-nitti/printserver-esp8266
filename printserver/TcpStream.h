@@ -8,7 +8,9 @@ class TcpStream {
     WiFiClient tcpConnection;
     boolean timedOut = false;
 
+  protected:
     void waitAvailable(int numBytes);
+
   public:
     TcpStream(WiFiClient tcpConnection);
 

@@ -64,13 +64,17 @@ void TcpPrintServer::process() {
   WiFiClient _httpClient = httpServer.available();
   if (_httpClient) {
     HttpStream newHttpClient(&_httpClient);
-    http_req_t req = newHttpClient.parseRequestHeader();
-    if (req.parseSuccess && req.httpMethod == "GET" && req.path == "/") {
+    if (!newHttpClient.parseRequestHeader()) {
+      return;
+    }
+    String method = newHttpClient.getRequestMethod();
+    String path = newHttpClient.getRequestPath();
+    if (method == "GET" && path == "/") {
       newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>ESP8266 print server</h1><a href=\"/wifi\">WiFi configuration</a><br><a href=\"/printerInfo\">Printer Info</a>");
-    } else if (req.parseSuccess && req.httpMethod == "GET" && req.path == "/printerInfo") {
+    } else if (method == "GET" && path == "/printerInfo") {
       newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n");
       newHttpClient.print(printer->getInfo());
-    } else if (req.parseSuccess && req.httpMethod == "GET" && req.path == "/wifi") {
+    } else if (method == "GET" && path == "/wifi") {
       newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>WiFi configuration</h1><p>Status: ");
       newHttpClient.print(WiFiManager::info());
       newHttpClient.print("</p><form method=\"POST\" action=\"/wifi-connect\">Available networks (choose one to connect):<ul>");
@@ -78,8 +82,8 @@ void TcpPrintServer::process() {
         newHttpClient.print("<li><input type=\"radio\" name=\"SSID\" value=\"" + ssid + "\">" + ssid + " (" + WiFiManager::getEncryptionTypeName(encryption) + ", " + String(rssi) + " dBm)</li>");
       });
       newHttpClient.print("</ul>Password (leave blank for open networks): <input type=\"password\" name=\"password\"><input type=\"submit\" value=\"Connect\"></form>");
-    } else if (req.parseSuccess && req.httpMethod == "POST" && req.path == "/wifi-connect") {
-      std::map<String, String> reqData = newHttpClient.parseUrlencodedRequestBody(req.contentLength);
+    } else if (method == "POST" && path == "/wifi-connect") {
+      std::map<String, String> reqData = newHttpClient.parseUrlencodedRequestBody();
       newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>OK</h1>");
       newHttpClient.stop();
       WiFiManager::connectTo(reqData["SSID"].c_str(), reqData["password"]);

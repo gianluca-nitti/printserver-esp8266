@@ -47,8 +47,10 @@ attribute_value_t getPrinterAttribute(String name) {
 }
 
 void Ipp::parseRequest(HttpStream c) {
-  http_req_t req = c.parseRequestHeader();
-  if (req.parseSuccess && req.httpMethod == "POST" && req.path == "/") {
+  if (!c.parseRequestHeader()) {
+    return;
+  }
+  if (c.getRequestMethod() == "POST" && c.getRequestPath() == "/") {
     uint16_t ippVersion = c.read2Bytes();
     uint16_t operationId = c.read2Bytes();
     uint32_t requestId = c.read4Bytes();

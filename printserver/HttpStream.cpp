@@ -19,12 +19,30 @@ void HttpStream::waitAvailable(int numBytes) {
   }
 }
 
+void HttpStream::parseNextChunkLength() {
+  String chunkLength = tcpConnection->readStringUntil('\r');
+  tcpConnection->read(); //consume '\n'
+  remainingChunkBytes = (int) strtol(chunkLength.c_str(), NULL, 16);
+  // TODO: check if length is zero (last chunk)
+}
+
 byte HttpStream::read() {
   if (timedOut) {
     return 0;
   }
   waitAvailable(1);
-  return tcpConnection->read();
+  byte result = tcpConnection->read();
+  if (requestChunkedEncoded) {
+    remainingChunkBytes--;
+    if (remainingChunkBytes == 0) {
+      // consume CRLF chunk end delimiter
+      waitAvailable(2);
+      tcpConnection->read();
+      tcpConnection->read();
+      parseNextChunkLength();
+    }
+  }
+  return result;
 }
 
 uint16_t HttpStream::read2Bytes() {
@@ -32,8 +50,8 @@ uint16_t HttpStream::read2Bytes() {
   if (timedOut) {
     return 0;
   }
-  uint16_t hi = tcpConnection->read();
-  uint16_t lo = tcpConnection->read();
+  uint16_t hi = read();
+  uint16_t lo = read();
   return (hi << 8) | lo;
 }
 
@@ -42,10 +60,10 @@ uint32_t HttpStream::read4Bytes() {
   if (timedOut) {
     return 0;
   }
-  uint32_t b0 = tcpConnection->read();
-  uint32_t b1 = tcpConnection->read();
-  uint32_t b2 = tcpConnection->read();
-  uint32_t b3 = tcpConnection->read();
+  uint32_t b0 = read();
+  uint32_t b1 = read();
+  uint32_t b2 = read();
+  uint32_t b3 = read();
   return (b0 << 24) | (b1 << 16) | (b2 << 8) | b3;
 }
 
@@ -70,7 +88,7 @@ String HttpStream::readString(int len) {
   String result = "";
   result.reserve(len);
   for (int i = 0; i < len; i++) {
-    result += (char) tcpConnection->read();
+    result += (char) read();
   }
   return result;
 }
@@ -103,54 +121,60 @@ void HttpStream::stop() {
   tcpConnection->stop();
 }
 
-http_req_t HttpStream::parseRequestHeader() {
-  http_req_t result;
-  result.parseSuccess = false;
+bool HttpStream::parseRequestHeader() {
   if (timedOut) {
-    return result;
+    return false;
   }
-  result.httpMethod = readStringUntil(' ');
-  if (result.httpMethod == "") {
-    return result;
+  requestMethod = readStringUntil(' ');
+  if (timedOut || requestMethod == "") {
+    return false;
   }
-  result.path = readStringUntil(' ');
-  if (result.path == "") {
-    return result;
+  requestPath = readStringUntil(' ');
+  if (timedOut || requestPath == "") {
+    return false;
   }
 
   readStringUntil('\r');
   read(); //consume the '\n'
 
+  bool chunkedEncoded = false;
   String header;
   while ((header = readStringUntil('\r')) != "") {
+    header.toLowerCase(); //does not return a new string, modifies the existing one in-place (source: https://github.com/esp8266/Arduino/blob/master/cores/esp8266/WString.cpp#L732)
     if (header.startsWith(CONTENT_LENGTH_HEADER)) {
-      result.contentLength = header.substring(STRLEN(CONTENT_LENGTH_HEADER)).toInt();
+      requestContentLength = header.substring(STRLEN(CONTENT_LENGTH_HEADER)).toInt();
+    } else if (header == CHUNKED_ENCODING_HEADER) {
+      chunkedEncoded = true;
+      remainingChunkBytes = 0;
     }
     read(); //consume the '\n'
   }
   read(); //consume the '\n'
 
-  result.parseSuccess = true;
-  return result;
+  requestChunkedEncoded = chunkedEncoded;
+  if (chunkedEncoded) {
+    parseNextChunkLength();
+  }
+  return true;
 }
 
-std::map<String, String> HttpStream::parseUrlencodedRequestBody(int contentLength) {
+std::map<String, String> HttpStream::parseUrlencodedRequestBody() {
   std::map<String, String> result;
   if (timedOut) {
     return result;
   }
   int parsedBytes = 0;
-  while (parsedBytes < contentLength) {
+  while (parsedBytes < requestContentLength) {
     String key, value;
     key.reserve(32);
     value.reserve(32);
     char readChar;
-    while (parsedBytes < contentLength && ((readChar = read()) != '=')){
+    while (parsedBytes < requestContentLength && ((readChar = read()) != '=')){
       key += readChar;
       parsedBytes++;
     }
     parsedBytes++; // '='
-    while (parsedBytes < contentLength && ((readChar = read()) != '&')){
+    while (parsedBytes < requestContentLength && ((readChar = read()) != '&')){
       value += readChar;
       parsedBytes++;
     }
@@ -158,4 +182,12 @@ std::map<String, String> HttpStream::parseUrlencodedRequestBody(int contentLengt
     result[key] = value;
   }
   return result;
+}
+
+String HttpStream::getRequestMethod() {
+  return requestMethod;
+}
+
+String HttpStream::getRequestPath() {
+  return requestPath;
 }

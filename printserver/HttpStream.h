@@ -5,20 +5,23 @@
 #include "Settings.h"
 
 #define STRLEN(s) ((sizeof(s) / sizeof(s[0])) - 1)
-#define CONTENT_LENGTH_HEADER "Content-Length: "
 
-typedef struct {
-  bool parseSuccess = false;
-  String httpMethod = "";
-  String path = "";
-  int contentLength = 0;
-} http_req_t;
+#define CONTENT_LENGTH_HEADER "content-length: "
+#define CHUNKED_ENCODING_HEADER "transfer-encoding: chunked"
 
 class HttpStream {
   private:
     WiFiClient* tcpConnection;
     boolean timedOut = false;
+
+    String requestMethod = "";
+    String requestPath = "";
+    int requestContentLength = 0;
+    bool requestChunkedEncoded = false;
+    int remainingChunkBytes = 0;
+
     void waitAvailable(int numBytes);
+    void parseNextChunkLength();
   public:
     HttpStream(WiFiClient* tcpConnection);
     byte read();
@@ -34,6 +37,9 @@ class HttpStream {
 
     void stop();
 
-    http_req_t parseRequestHeader();
-    std::map<String, String> parseUrlencodedRequestBody(int contentLength);
+    bool parseRequestHeader();
+    std::map<String, String> parseUrlencodedRequestBody();
+
+    String getRequestMethod();
+    String getRequestPath();
 };

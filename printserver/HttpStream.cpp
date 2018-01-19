@@ -10,7 +10,6 @@ void HttpStream::waitAvailable(int numBytes) {
     delay(10);
     if (millis() - start > HTTP_READ_TIMEOUT_MS) {
       timedOut = true;
-      // TODO: send 408 Request Timeout
       Serial.println("HTTP read timed out");
       tcpConnection->print("HTTP/1.1 408 Request Timeout\r\n\r\n");
       tcpConnection->stop();
@@ -21,6 +20,7 @@ void HttpStream::waitAvailable(int numBytes) {
 
 void HttpStream::parseNextChunkLength() {
   String chunkLength = tcpConnection->readStringUntil('\r');
+  waitAvailable(1);
   tcpConnection->read(); //consume '\n'
   remainingChunkBytes = (int) strtol(chunkLength.c_str(), NULL, 16);
   // TODO: check if length is zero (last chunk)
@@ -91,6 +91,13 @@ String HttpStream::readString(int len) {
     result += (char) read();
   }
   return result;
+}
+
+bool HttpStream::hasMoreData() {
+  if (timedOut || !tcpConnection->connected()) {
+    return false;
+  }
+  return remainingChunkBytes != 0; //TODO: make it work for non-chunked requests as well
 }
 
 void HttpStream::write(byte b) {

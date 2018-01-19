@@ -28,5 +28,5 @@ typedef struct {
 
 class Ipp {
   public:
-    static void parseRequest(HttpStream c); //TODO return bool
+    static void parseRequest(HttpStream& c); //TODO return bool
 };

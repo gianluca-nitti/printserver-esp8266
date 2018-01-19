@@ -2,7 +2,7 @@
 #include <set>
 #include "Ipp.h"
 
-std::map<String, std::set<String>> parseRequestAttributes(HttpStream source) {
+std::map<String, std::set<String>> parseRequestAttributes(HttpStream& source) {
   std::map<String, std::set<String>> result;
   byte tag = source.read();
   if (tag == IPP_OPERATION_ATTRIBUTES_TAG) {
@@ -15,7 +15,7 @@ std::map<String, std::set<String>> parseRequestAttributes(HttpStream source) {
       uint16_t valueLength = source.read2Bytes();
       String value = source.readString(valueLength);
       result[name].insert(value);
-      Serial.printf("Parsed IPP attribute: tag=0x%02X, name=\"%s\", value=\"%s\"\r\n", tag, name.c_str(), value.c_str());
+      //Serial.printf("Parsed IPP attribute: tag=0x%02X, name=\"%s\", value=\"%s\"\r\n", tag, name.c_str(), value.c_str());
     }
   } else if (tag != IPP_END_OF_ATTRIBUTES_TAG) {
     //bad request, TODO throw
@@ -23,14 +23,14 @@ std::map<String, std::set<String>> parseRequestAttributes(HttpStream source) {
   return result;
 }
 
-void beginResponse(HttpStream dest, uint16_t statusCode, uint32_t requestId) {
+void beginResponse(HttpStream& dest, uint16_t statusCode, uint32_t requestId) {
   dest.print("HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200 OK\r\n\r\n");
   dest.write2Bytes(IPP_SUPPORTED_VERSION);
   dest.write2Bytes(statusCode);
   dest.write4Bytes(requestId);
 }
 
-void writeAttribute(HttpStream dest, byte valueTag, String name, String value) {
+void writeAttribute(HttpStream& dest, byte valueTag, String name, String value) {
   dest.write(valueTag);
   dest.write2Bytes((uint16_t) name.length());
   dest.print(name);
@@ -38,7 +38,7 @@ void writeAttribute(HttpStream dest, byte valueTag, String name, String value) {
   dest.print(value);
 }
 
-inline void writeAttribute(HttpStream dest, String name, attribute_value_t value) {
+inline void writeAttribute(HttpStream& dest, String name, attribute_value_t value) {
   writeAttribute(dest, value.valueTag, name, value.value);
 }
 
@@ -46,7 +46,7 @@ attribute_value_t getPrinterAttribute(String name) {
   return {IPP_VALUE_TAG_UNSUPPORTED, ""};
 }
 
-void Ipp::parseRequest(HttpStream c) {
+void Ipp::parseRequest(HttpStream& c) {
   if (!c.parseRequestHeader()) {
     return;
   }
@@ -71,24 +71,32 @@ void Ipp::parseRequest(HttpStream c) {
             if (attributeValue.valueTag == IPP_VALUE_TAG_UNSUPPORTED) {
               unsupportedAttributes.insert(attributeName);
             } else {
-              Serial.printf("Supported attribute: \"%s\"\r\n", attributeName.c_str());
+              //Serial.printf("Supported attribute: \"%s\"\r\n", attributeName.c_str());
               writeAttribute(c, attributeName, attributeValue);
             }
           }
           c.write(IPP_UNSUPPORTED_ATTRIBUTES_TAG);
           for (String attributeName: unsupportedAttributes) {
-            Serial.printf("Unupported attribute: \"%s\"\r\n", attributeName.c_str());
+            //Serial.printf("Unupported attribute: \"%s\"\r\n", attributeName.c_str());
             writeAttribute(c, IPP_VALUE_TAG_UNSUPPORTED, attributeName, "unsupported");
           }
           c.write(IPP_END_OF_ATTRIBUTES_TAG);
           c.stop();
           break;
         case IPP_PRINT_JOB:
-          Serial.println("Operation is Print-Job");
+          Serial.println("Operation is Print-Job; reading job data...");
+          while (c.hasMoreData()) {
+            //Serial.println(c.read(), HEX);
+            Serial.println(c.read(), HEX);
+            yield();
+          }
+          Serial.println("End of job data");
+          c.stop(); //TODO REMOVE!!
           break;
         default:
           // TODO: report that operation is not supported
           Serial.println("The requested operation is not supported!");
+          c.stop();
       }
     } else {
       Serial.println("Unsupported IPP version");

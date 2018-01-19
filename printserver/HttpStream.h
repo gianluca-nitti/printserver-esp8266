@@ -24,11 +24,13 @@ class HttpStream {
     void parseNextChunkLength();
   public:
     HttpStream(WiFiClient* tcpConnection);
+
     byte read();
     uint16_t read2Bytes();
     uint32_t read4Bytes();
     String readStringUntil(char delim);
     String readString(int length);
+    bool hasMoreData();
 
     void write(byte b);
     void write2Bytes(uint16_t data);

@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <WiFiClient.h>
+#include "HttpStream.h"
 
 #define IPP_SUPPORTED_VERSION 0x0101
 
@@ -27,5 +28,5 @@ typedef struct {
 
 class Ipp {
   public:
-    static void parseRequest(WiFiClient* c); //TODO return bool
+    static void parseRequest(HttpStream c); //TODO return bool
 };

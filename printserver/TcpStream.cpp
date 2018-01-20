@@ -72,12 +72,12 @@ String TcpStream::readString(int len) {
   return result;
 }
 
-bool TcpStream::connected() {
-  return tcpConnection.connected();
+bool TcpStream::hasMoreData() {
+  return !timedOut && tcpConnection.connected();
 }
 
-bool TcpStream::hasMoreData() {
-  return !timedOut && connected() && tcpConnection.available() > 0;
+bool TcpStream::dataAvailable() {
+  return !timedOut && tcpConnection.available() > 0;
 }
 
 void TcpStream::write(byte b) {

@@ -12,8 +12,8 @@ TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), i
 }
 
 void TcpPrintServer::handleClient(int index) {
-  if (clients[index]->connected()) {
-    if (clients[index]->hasMoreData() && printer->canPrint(index)) {
+  if (clients[index]->hasMoreData()) {
+    if (clients[index]->dataAvailable() && printer->canPrint(index)) {
       printer->printByte(index, clients[index]->read());
     } //TODO timeout
   } else {

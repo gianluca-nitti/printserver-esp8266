@@ -14,8 +14,9 @@ class TcpStream {
   public:
     TcpStream(WiFiClient tcpConnection);
 
-    bool connected();
     virtual bool hasMoreData();
+    virtual bool dataAvailable();
+
     virtual byte read();
     uint16_t read2Bytes();
     uint32_t read4Bytes();

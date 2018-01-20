@@ -17,9 +17,10 @@ class TcpPrintServer {
 
     void handleClient(int index);
 
-    void processSocketClients();
-    void processIppClients();
-    void processWebClients();
+    int getFreeClientSlot();
+    void processNewSocketClients();
+    void processNewIppClients();
+    void processNewWebClients();
   public:
     TcpPrintServer(Printer* p);
     void start();

@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 #include <WiFiClient.h>
+#include <map>
+#include <set>
 #include "HttpStream.h"
 
 #define IPP_SUPPORTED_VERSION 0x0101
@@ -26,7 +28,13 @@ typedef struct {
   String value;
 } attribute_value_t;
 
-class Ipp {
+class IppStream: public HttpStream {
   public:
-    static void parseRequest(HttpStream& c); //TODO return bool
+    IppStream(WiFiClient conn);
+    bool parseRequest();
+  private:
+    std::map<String, std::set<String>> parseRequestAttributes();
+    void beginResponse(uint16_t statusCode, uint32_t requestId);
+    void writeAttribute(byte valueTag, String name, String value);
+    void writeAttribute(String name, attribute_value_t value);
 };

@@ -1,7 +1,7 @@
 #include "WiFiManager.h"
 #include "Settings.h"
 #include "HttpStream.h"
-#include "Ipp.h"
+#include "IppStream.h"
 #include "TcpPrintServer.h"
 
 TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), ippServer(IPP_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
@@ -30,15 +30,17 @@ void TcpPrintServer::start() {
   httpServer.begin();
 }
 
-void TcpPrintServer::processSocketClients() {
-  int freeClientSlot = -1;
+int TcpPrintServer::getFreeClientSlot() {
   for (int i = 0; i < MAXCLIENTS; i++) {
-    if (clients[i] != NULL) {
-      handleClient(i);
-    } else {
-      freeClientSlot = i;
+    if (clients[i] == NULL) {
+      return i;
     }
   }
+  return -1;
+}
+
+void TcpPrintServer::processNewSocketClients() {
+  int freeClientSlot = getFreeClientSlot();
   if (freeClientSlot != -1) {
     WiFiClient newClient = socketServer.available();
     if (newClient) {
@@ -49,15 +51,21 @@ void TcpPrintServer::processSocketClients() {
   }
 }
 
-void TcpPrintServer::processIppClients() {
+void TcpPrintServer::processNewIppClients() {
   WiFiClient _ippClient = ippServer.available();
   if (_ippClient) {
-    HttpStream ippClient(_ippClient);
-    Ipp::parseRequest(ippClient);
+    IppStream* ippClient = new IppStream(_ippClient);
+    int freeClientSlot = getFreeClientSlot();
+    if (ippClient->parseRequest() && freeClientSlot != -1) {
+      clients[freeClientSlot] = ippClient;
+      printer->startJob(freeClientSlot);
+    } else {
+      delete ippClient;
+    }
   }
 }
 
-void TcpPrintServer::processWebClients() {
+void TcpPrintServer::processNewWebClients() {
   WiFiClient _httpClient = httpServer.available();
   if (!_httpClient) {
     return;
@@ -94,9 +102,14 @@ void TcpPrintServer::processWebClients() {
 }
 
 void TcpPrintServer::process() {
-  processSocketClients();
-  processIppClients();
-  processWebClients();
+  for (int i = 0; i < MAXCLIENTS; i++) {
+    if (clients[i] != NULL) {
+      handleClient(i);
+    }
+  }
+  processNewSocketClients();
+  processNewIppClients();
+  processNewWebClients();
 }
 
 void TcpPrintServer::printInfo() {

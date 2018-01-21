@@ -30,15 +30,11 @@
 #define IPP_VALUE_TAG_MIME_MEDIA_TYPE 0x49
 
 #define IPP_PRINT_JOB 0x0002
+#define IPP_VALIDATE_JOB 0x0004
+#define IPP_CANCEL_JOB 0x0008
+#define IPP_GET_JOB_ATTRIBUTES 0x0009
+#define IPP_GET_JOBS 0x000A
 #define IPP_GET_PRINTER_ATTRIBUTES 0x000B
-
-typedef struct {
-  byte valueTag;
-  char* value;
-  int valueLength;
-} attribute_value_t;
-
-#define STRING_ATTRIBUTE_VALUE(tag, str) {tag, str, STRLEN(str)}
 
 class IppStream: public HttpStream {
   public:
@@ -47,8 +43,12 @@ class IppStream: public HttpStream {
   private:
     std::map<String, std::set<String>> parseRequestAttributes();
     void beginResponse(uint16_t statusCode, uint32_t requestId, String charset);
-    void writeAttribute(byte valueTag, String name, String value);
-    void writeAttribute(String name, attribute_value_t value);
 
+    void writeStringAttribute(byte valueTag, String name, String value);
+    void writeByteAttribute(byte valueTag, String name, byte value);
+    void write2BytesAttribute(byte valueTag, String name, uint16_t value);
+    void write4BytesAttribute(byte valueTag, String name, uint32_t value);
+
+    void writePrinterAttribute(String name);
     void handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes);
 };

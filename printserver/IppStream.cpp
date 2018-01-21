@@ -58,11 +58,11 @@ void IppStream::beginResponse(uint16_t statusCode, uint32_t requestId, String ch
   write2Bytes(statusCode);
   write4Bytes(requestId);
   write(IPP_OPERATION_ATTRIBUTES_TAG);
-  writeAttribute(IPP_VALUE_TAG_CHARSET, "attributes-charset", charset);
-  writeAttribute(IPP_VALUE_TAG_NATURAL_LANGUAGE, "attributes-natural-language", "en-us");
+  writeStringAttribute(IPP_VALUE_TAG_CHARSET, "attributes-charset", charset);
+  writeStringAttribute(IPP_VALUE_TAG_NATURAL_LANGUAGE, "attributes-natural-language", "en-us");
 }
 
-void IppStream::writeAttribute(byte valueTag, String name, String value) {
+void IppStream::writeStringAttribute(byte valueTag, String name, String value) {
   write(valueTag);
   write2Bytes((uint16_t) name.length());
   print(name);
@@ -70,83 +70,99 @@ void IppStream::writeAttribute(byte valueTag, String name, String value) {
   print(value);
 }
 
-void IppStream::writeAttribute(String name, attribute_value_t value) {
-  write(value.valueTag);
+void IppStream::writeByteAttribute(byte valueTag, String name, byte value) {
+  write(valueTag);
   write2Bytes((uint16_t) name.length());
   print(name);
-  write2Bytes((uint16_t) value.valueLength);
-  for (int i = 0; i < value.valueLength; i++) {
-    write(value.value[i]);
-  }
+  write2Bytes(1);
+  write(value);
 }
 
-attribute_value_t getPrinterAttribute(String name) {
+void IppStream::write2BytesAttribute(byte valueTag, String name, uint16_t value) {
+  write(valueTag);
+  write2Bytes((uint16_t) name.length());
+  print(name);
+  write2Bytes(2);
+  write2Bytes(value);
+}
+
+void IppStream::write4BytesAttribute(byte valueTag, String name, uint32_t value) {
+  write(valueTag);
+  write2Bytes((uint16_t) name.length());
+  print(name);
+  write2Bytes(4);
+  write4Bytes(value);
+}
+
+void IppStream::writePrinterAttribute(String name) {
   if (name == "charset-configured") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_CHARSET, "utf-8");
+    writeStringAttribute(IPP_VALUE_TAG_CHARSET, name, "utf-8");
   } else if (name == "charset-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_CHARSET, "utf-8");
+    writeStringAttribute(IPP_VALUE_TAG_CHARSET, name, "utf-8");
   } else if (name == "compression-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_KEYWORD, "none");
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "none");
   } else if (name == "document-format-default") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_MIME_MEDIA_TYPE, "text/plain");
+    writeStringAttribute(IPP_VALUE_TAG_MIME_MEDIA_TYPE, name, "text/plain");
   } else if (name == "document-format-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_MIME_MEDIA_TYPE, "text/plain");
+    writeStringAttribute(IPP_VALUE_TAG_MIME_MEDIA_TYPE, name, "text/plain");
   } else if (name == "generated-natural-language-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_NATURAL_LANGUAGE, "en-us");
+    writeStringAttribute(IPP_VALUE_TAG_NATURAL_LANGUAGE, name, "en-us");
   } else if (name =="ipp-versions-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_KEYWORD, "1.1");
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "1.1");
   } else if (name == "natural-language-configured") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_NATURAL_LANGUAGE, "en-us");
+    writeStringAttribute(IPP_VALUE_TAG_NATURAL_LANGUAGE, name, "en-us");
   } else if (name == "operations-supported") {
-    return {IPP_VALUE_TAG_ENUM, "\0\0\0\x02", 4};
+    write4BytesAttribute(IPP_VALUE_TAG_ENUM, name, IPP_PRINT_JOB);
+    //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_VALIDATE_JOB);
+    //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_CANCEL_JOB);
+    //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_GET_JOB_ATTRIBUTES);
+    //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_GET_JOBS);
+    write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_GET_PRINTER_ATTRIBUTES);
   } else if (name == "pdl-override-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_KEYWORD, "en-us");
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "en-us");
   } else if (name == "printer-name") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_NAME, "ESP8266 print server"); //TODO
+    writeStringAttribute(IPP_VALUE_TAG_NAME, name, "ESP8266 print server"); //TODO
   } else if (name =="printer-is-accepting-jobs") {
-    return {IPP_VALUE_TAG_BOOLEAN, "\x01", 1};
+    writeByteAttribute(IPP_VALUE_TAG_BOOLEAN, name, 1);
   } else if (name == "printer-state") {
-    return {IPP_VALUE_TAG_ENUM, "\0\0\0\x03", 4}; //3 = idle
+    write4BytesAttribute(IPP_VALUE_TAG_ENUM, name, 3); //3 = idle
   } else if (name == "printer-state-reasons") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_KEYWORD, "none");
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "none");
   } else if (name == "printer-up-time") {
-    return {IPP_VALUE_TAG_INTEGER, "\0\0\0\x01", 4};
+    write4BytesAttribute(IPP_VALUE_TAG_INTEGER, name, 1);
   } else if (name == "printer-uri-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_URI, "ipp://192.168.1.1"); //TODO
+    writeStringAttribute(IPP_VALUE_TAG_URI, name, "ipp://192.168.1.1"); //TODO
   } else if (name == "queued-job-count") {
-    return {IPP_VALUE_TAG_INTEGER, "\0\0\0\0", 4};
+    write4BytesAttribute(IPP_VALUE_TAG_INTEGER, name, 0);
   } else if (name == "uri-authentication-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_KEYWORD, "none");
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "none");
   } else if (name == "uri-security-supported") {
-    return STRING_ATTRIBUTE_VALUE(IPP_VALUE_TAG_KEYWORD, "none");
-  } else {
-    return {IPP_VALUE_TAG_UNSUPPORTED, ""};
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "none");
   }
 }
 
 void IppStream::handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes) {
   std::set<String>& requestedAttributes = requestAttributes["requested-attributes"];
-  std::set<String> supportedAttributes;
 
   if (requestedAttributes.size() == 0 || (requestedAttributes.find("all") != requestedAttributes.end()) || (requestedAttributes.find("printer-description") != requestedAttributes.end())) {
     Serial.println("----sending all attributes");
     requestedAttributes = allPrinterDescriptionAttributes;
   }
 
-  write(IPP_UNSUPPORTED_ATTRIBUTES_TAG);
+  /*write(IPP_UNSUPPORTED_ATTRIBUTES_TAG);
   for (String attributeName: requestedAttributes) {
     if (getPrinterAttribute(attributeName).valueTag == IPP_VALUE_TAG_UNSUPPORTED) {
-      writeAttribute(IPP_VALUE_TAG_UNSUPPORTED, attributeName, "unsupported");
+      writeStringAttribute(IPP_VALUE_TAG_UNSUPPORTED, attributeName, "unsupported");
       Serial.printf("----------------------------Unsupported attribute: \"%s\"\r\n", attributeName.c_str());
     } else {
       supportedAttributes.insert(attributeName);
     }
-  }
+  }*/
 
   write(IPP_PRINTER_ATTRIBUTES_TAG);
-  for (String attributeName: supportedAttributes) {
+  for (String attributeName: requestedAttributes) {
     Serial.printf("------------------------------Supported attribute: \"%s\"\r\n", attributeName.c_str());
-    writeAttribute(attributeName, getPrinterAttribute(attributeName));
+    writePrinterAttribute(attributeName);
   }
 
   write(IPP_END_OF_ATTRIBUTES_TAG);

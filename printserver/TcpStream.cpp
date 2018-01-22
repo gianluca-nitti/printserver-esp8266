@@ -81,26 +81,35 @@ bool TcpStream::dataAvailable() {
 }
 
 void TcpStream::write(byte b) {
-  if (!timedOut) {
-    tcpConnection.write(b);
+  sendBuffer[sendBufferIndex] = b;
+  sendBufferIndex++;
+  if (sendBufferIndex == SEND_BUFFER_SIZE) {
+    flushSendBuffer();
   }
 }
 
 void TcpStream::write2Bytes(uint16_t data) {
-  tcpConnection.write((byte) ((data & 0xFF00) >> 8));
-  tcpConnection.write((byte) (data & 0x00FF));
+  write((byte) ((data & 0xFF00) >> 8));
+  write((byte) (data & 0x00FF));
 }
 
 void TcpStream::write4Bytes(uint32_t data) {
-  tcpConnection.write((byte) ((data & 0xFF000000) >> 24));
-  tcpConnection.write((byte) ((data & 0x00FF0000) >> 16));
-  tcpConnection.write((byte) ((data & 0x0000FF00) >> 8));
-  tcpConnection.write((byte) (data & 0x000000FF));
+  write((byte) ((data & 0xFF000000) >> 24));
+  write((byte) ((data & 0x00FF0000) >> 16));
+  write((byte) ((data & 0x0000FF00) >> 8));
+  write((byte) (data & 0x000000FF));
 }
 
 void TcpStream::print(String s) {
+  for (int i = 0; i < s.length(); i++) {
+    write((byte) s[i]);
+  }
+}
+
+void TcpStream::flushSendBuffer() {
   if (!timedOut) {
-    tcpConnection.print(s);
+    tcpConnection.write((byte*)sendBuffer, sendBufferIndex);
+    sendBufferIndex = 0;
   }
 }
 
@@ -110,6 +119,7 @@ void TcpStream::handleTimeout() {
 }
 
 TcpStream::~TcpStream() {
+  flushSendBuffer();
   Serial.println("Closing connection!");
   tcpConnection.stop();
 }

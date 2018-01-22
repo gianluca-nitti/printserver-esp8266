@@ -22,6 +22,7 @@
 #define IPP_VALUE_TAG_INTEGER 0x21
 #define IPP_VALUE_TAG_BOOLEAN 0x22
 #define IPP_VALUE_TAG_ENUM 0x23
+#define IPP_VALUE_TAG_TEXT 0x41
 #define IPP_VALUE_TAG_NAME 0x42
 #define IPP_VALUE_TAG_KEYWORD 0x44
 #define IPP_VALUE_TAG_URI 0x45
@@ -37,9 +38,6 @@
 #define IPP_GET_PRINTER_ATTRIBUTES 0x000B
 
 class IppStream: public HttpStream {
-  public:
-    IppStream(WiFiClient conn);
-    bool parseRequest();
   private:
     std::map<String, std::set<String>> parseRequestAttributes();
     void beginResponse(uint16_t statusCode, uint32_t requestId, String charset);
@@ -51,4 +49,8 @@ class IppStream: public HttpStream {
 
     void writePrinterAttribute(String name);
     void handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes);
+
+  public:
+    IppStream(WiFiClient conn);
+    bool parseRequest();
 };

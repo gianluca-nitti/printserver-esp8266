@@ -94,6 +94,7 @@ void TcpPrintServer::processNewWebClients() {
   } else if (method == "POST" && path == "/wifi-connect") {
     std::map<String, String> reqData = newHttpClient.parseUrlencodedRequestBody();
     newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>OK</h1>");
+    newHttpClient.flushSendBuffer();
     WiFiManager::connectTo(reqData["SSID"].c_str(), reqData["password"]);
   } else {
     newHttpClient.print("HTTP/1.1 404 Not Found \r\n\r\n<h1>Not found</h1>");

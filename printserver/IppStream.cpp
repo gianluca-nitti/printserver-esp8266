@@ -102,9 +102,9 @@ void IppStream::writePrinterAttribute(String name) {
   } else if (name == "compression-supported") {
     writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "none");
   } else if (name == "document-format-default") {
-    writeStringAttribute(IPP_VALUE_TAG_MIME_MEDIA_TYPE, name, "text/plain");
+    writeStringAttribute(IPP_VALUE_TAG_MIME_MEDIA_TYPE, name, "text/plain"); //TODO - get from printer?
   } else if (name == "document-format-supported") {
-    writeStringAttribute(IPP_VALUE_TAG_MIME_MEDIA_TYPE, name, "text/plain");
+    writeStringAttribute(IPP_VALUE_TAG_MIME_MEDIA_TYPE, name, "text/plain"); //TODO - get from printer?
   } else if (name == "generated-natural-language-supported") {
     writeStringAttribute(IPP_VALUE_TAG_NATURAL_LANGUAGE, name, "en-us");
   } else if (name =="ipp-versions-supported") {
@@ -212,8 +212,15 @@ bool IppStream::parseRequest() {
 
     case IPP_PRINT_JOB:
       Serial.println("Operation is Print-Job");
+      // TODO: print job data until available() is zero to avoid write() blocking
       beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
+      write(IPP_JOB_ATTRIBUTES_TAG);
+      write4BytesAttribute(IPP_VALUE_TAG_INTEGER, "job-id", 123); //TODO
+      writeStringAttribute(IPP_VALUE_TAG_URI, "job-uri", "ipp://hostname/printername/123"); //TODO
+      write4BytesAttribute(IPP_VALUE_TAG_ENUM, "job-state", 5); //5 = processing
+      writeStringAttribute(IPP_VALUE_TAG_KEYWORD, "job-state-reasons", "none");
       write(IPP_END_OF_ATTRIBUTES_TAG);
+      flushSendBuffer();
       return true;
 
     default:

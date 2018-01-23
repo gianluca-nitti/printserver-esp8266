@@ -1,6 +1,7 @@
 #include "Printer.h"
 
 Printer::Printer(String _printerId): queue(_printerId) {
+  name = _printerId;
 }
 
 void Printer::init() {
@@ -56,4 +57,8 @@ void Printer::processQueue() {
   } else if (status == IDLE && queue.hasData()) {
     status = PRINTING_FROM_QUEUE;
   }
+}
+
+String Printer::getName() {
+  return name;
 }

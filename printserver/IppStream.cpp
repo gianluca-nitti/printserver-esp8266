@@ -44,10 +44,8 @@ std::map<String, std::set<String>> IppStream::parseRequestAttributes() {
       }
       result[name].insert(value);
       index++;
-      Serial.printf("Parsed IPP attribute: tag=0x%02X, name=\"%s\", value=\"%s\"\r\n", tag, name.c_str(), value.c_str());
+      //Serial.printf("Parsed IPP attribute: tag=0x%02X, name=\"%s\", value=\"%s\"\r\n", tag, name.c_str(), value.c_str());
     }
-  } else if (tag != IPP_END_OF_ATTRIBUTES_TAG) {
-    //bad request, TODO throw
   }
   return result;
 }
@@ -94,7 +92,7 @@ void IppStream::write4BytesAttribute(byte valueTag, String name, uint32_t value)
   write4Bytes(value);
 }
 
-void IppStream::writePrinterAttribute(String name) {
+void IppStream::writePrinterAttribute(String name, Printer* printer) {
   if (name == "charset-configured") {
     writeStringAttribute(IPP_VALUE_TAG_CHARSET, name, "utf-8");
   } else if (name == "charset-supported") {
@@ -113,15 +111,15 @@ void IppStream::writePrinterAttribute(String name) {
     writeStringAttribute(IPP_VALUE_TAG_NATURAL_LANGUAGE, name, "en-us");
   } else if (name == "operations-supported") {
     write4BytesAttribute(IPP_VALUE_TAG_ENUM, name, IPP_PRINT_JOB);
-    //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_VALIDATE_JOB);
+    write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_VALIDATE_JOB);
     //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_CANCEL_JOB);
     //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_GET_JOB_ATTRIBUTES);
     //write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_GET_JOBS);
     write4BytesAttribute(IPP_VALUE_TAG_ENUM, "", IPP_GET_PRINTER_ATTRIBUTES);
   } else if (name == "pdl-override-supported") {
-    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "en-us");
+    writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "not-attempted");
   } else if (name == "printer-name") {
-    writeStringAttribute(IPP_VALUE_TAG_NAME, name, "ESP8266 print server"); //TODO
+    writeStringAttribute(IPP_VALUE_TAG_NAME, name, printer->getName());
   } else if (name =="printer-is-accepting-jobs") {
     writeByteAttribute(IPP_VALUE_TAG_BOOLEAN, name, 1);
   } else if (name == "printer-state") {
@@ -129,7 +127,7 @@ void IppStream::writePrinterAttribute(String name) {
   } else if (name == "printer-state-reasons") {
     writeStringAttribute(IPP_VALUE_TAG_KEYWORD, name, "none");
   } else if (name == "printer-up-time") {
-    write4BytesAttribute(IPP_VALUE_TAG_INTEGER, name, 1);
+    write4BytesAttribute(IPP_VALUE_TAG_INTEGER, name, millis() / 1000);
   } else if (name == "printer-uri-supported") {
     writeStringAttribute(IPP_VALUE_TAG_URI, name, "ipp://192.168.1.1"); //TODO
   } else if (name == "queued-job-count") {
@@ -141,34 +139,22 @@ void IppStream::writePrinterAttribute(String name) {
   }
 }
 
-void IppStream::handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes) {
+void IppStream::handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes, Printer* printer) {
   std::set<String>& requestedAttributes = requestAttributes["requested-attributes"];
 
   if (requestedAttributes.size() == 0 || (requestedAttributes.find("all") != requestedAttributes.end()) || (requestedAttributes.find("printer-description") != requestedAttributes.end())) {
-    Serial.println("----sending all attributes");
     requestedAttributes = allPrinterDescriptionAttributes;
   }
 
-  /*write(IPP_UNSUPPORTED_ATTRIBUTES_TAG);
-  for (String attributeName: requestedAttributes) {
-    if (getPrinterAttribute(attributeName).valueTag == IPP_VALUE_TAG_UNSUPPORTED) {
-      writeStringAttribute(IPP_VALUE_TAG_UNSUPPORTED, attributeName, "unsupported");
-      Serial.printf("----------------------------Unsupported attribute: \"%s\"\r\n", attributeName.c_str());
-    } else {
-      supportedAttributes.insert(attributeName);
-    }
-  }*/
-
   write(IPP_PRINTER_ATTRIBUTES_TAG);
   for (String attributeName: requestedAttributes) {
-    Serial.printf("------------------------------Supported attribute: \"%s\"\r\n", attributeName.c_str());
-    writePrinterAttribute(attributeName);
+    writePrinterAttribute(attributeName, printer);
   }
 
   write(IPP_END_OF_ATTRIBUTES_TAG);
 }
 
-bool IppStream::parseRequest() {
+bool IppStream::parseRequest(Printer* printer) {
   if (!parseRequestHeader()) {
     return false;
   }
@@ -207,12 +193,11 @@ bool IppStream::parseRequest() {
     case IPP_GET_PRINTER_ATTRIBUTES:
       Serial.println("Operation is Get-printer-Attributes");
       beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
-      handleGetPrinterAttributesRequest(requestAttributes);
+      handleGetPrinterAttributesRequest(requestAttributes, printer);
       return false;
 
     case IPP_PRINT_JOB:
       Serial.println("Operation is Print-Job");
-      // TODO: print job data until available() is zero to avoid write() blocking
       beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
       write(IPP_JOB_ATTRIBUTES_TAG);
       write4BytesAttribute(IPP_VALUE_TAG_INTEGER, "job-id", 123); //TODO
@@ -222,6 +207,12 @@ bool IppStream::parseRequest() {
       write(IPP_END_OF_ATTRIBUTES_TAG);
       flushSendBuffer();
       return true;
+
+    case IPP_VALIDATE_JOB:
+      Serial.println("Operation is Validate-Job");
+      beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
+      write(IPP_END_OF_ATTRIBUTES_TAG);
+      return false;
 
     default:
       Serial.println("The requested operation is not supported!");

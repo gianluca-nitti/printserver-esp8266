@@ -56,7 +56,7 @@ void TcpPrintServer::processNewIppClients() {
   if (_ippClient) {
     IppStream* ippClient = new IppStream(_ippClient);
     int freeClientSlot = getFreeClientSlot();
-    if (ippClient->parseRequest() && freeClientSlot != -1) {
+    if (ippClient->parseRequest(printer) && freeClientSlot != -1) {
       clients[freeClientSlot] = ippClient;
       printer->startJob(freeClientSlot);
     } else {

@@ -13,6 +13,7 @@ class Printer {
     printer_status status = IDLE;
     int printingClientId = 0;
     PrintQueue queue;
+    String name;
   protected:
     Printer(String _printerId);
     virtual bool canPrint() = 0;
@@ -25,5 +26,6 @@ class Printer {
     bool canPrint(int clientId);
     void printByte(int clientId, byte b);
     void processQueue();
+    String getName();
     virtual String getInfo() = 0;
 };

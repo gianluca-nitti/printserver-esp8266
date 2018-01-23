@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include "HttpStream.h"
+#include "Printer.h"
 
 #define IPP_SUPPORTED_VERSION 0x0101
 
@@ -47,10 +48,10 @@ class IppStream: public HttpStream {
     void write2BytesAttribute(byte valueTag, String name, uint16_t value);
     void write4BytesAttribute(byte valueTag, String name, uint32_t value);
 
-    void writePrinterAttribute(String name);
-    void handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes);
+    void writePrinterAttribute(String name, Printer* printer);
+    void handleGetPrinterAttributesRequest(std::map<String, std::set<String>> requestAttributes, Printer* printer);
 
   public:
     IppStream(WiFiClient conn);
-    bool parseRequest();
+    bool parseRequest(Printer* printer);
 };

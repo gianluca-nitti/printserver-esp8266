@@ -11,8 +11,6 @@ class TcpStream {
     boolean timedOut = false;
     byte sendBuffer[SEND_BUFFER_SIZE];
     int sendBufferIndex = 0;
-
-  protected:
     void waitAvailable(int numBytes);
 
   public:

@@ -5,6 +5,9 @@ TcpStream::TcpStream(WiFiClient s): tcpConnection(s) {
 }
 
 void TcpStream::waitAvailable(int numBytes) {
+  if (timedOut) {
+    return;
+  }
   unsigned long start = millis();
   while (tcpConnection.available() < numBytes) {
     delay(10);
@@ -17,10 +20,10 @@ void TcpStream::waitAvailable(int numBytes) {
 }
 
 byte TcpStream::read() {
+  waitAvailable(1);
   if (timedOut) {
     return 0;
   }
-  waitAvailable(1);
   return tcpConnection.read();
 }
 
@@ -56,14 +59,14 @@ String TcpStream::readStringUntil(char delim) {
   while (!timedOut && (c = read()) != delim) {
     result += c;
   }
-  return result;
+  return timedOut ? "" : result;
 }
 
 String TcpStream::readString(int len) {
+  waitAvailable(len);
   if (timedOut) {
     return "";
   }
-  waitAvailable(len);
   String result = "";
   result.reserve(len);
   for (int i = 0; i < len; i++) {
@@ -81,6 +84,9 @@ bool TcpStream::dataAvailable() {
 }
 
 void TcpStream::write(byte b) {
+  if (timedOut) {
+    return;
+  }
   sendBuffer[sendBufferIndex] = b;
   sendBufferIndex++;
   if (sendBufferIndex == SEND_BUFFER_SIZE) {

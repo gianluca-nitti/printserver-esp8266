@@ -17,7 +17,7 @@ void TcpPrintServer::handleClient(int index) {
   if (clients[index]->hasMoreData()) {
     if (clients[index]->dataAvailable() && printer->canPrint(index)) {
       printer->printByte(index, clients[index]->read());
-    } //TODO timeout
+    }
   } else {
     Serial.println("Disconnected");
     delete clients[index];
@@ -48,8 +48,8 @@ void TcpPrintServer::processNewSocketClients() {
     if (newClient) {
       Serial.println("Connected: " + newClient.remoteIP().toString() + ":" + newClient.remotePort());
       clients[freeClientSlot] = new TcpStream(newClient);
-      clientTargetPrinters[freeClientSlot] = 0; //TODO
-      printers[0]->startJob(freeClientSlot); //TODO
+      clientTargetPrinters[freeClientSlot] = 0;
+      printers[0]->startJob(freeClientSlot);
     }
   }
 }
@@ -84,10 +84,18 @@ void TcpPrintServer::processNewWebClients() {
   String path = newHttpClient.getRequestPath();
   Serial.printf("request parsed: %s %s\r\n", method.c_str(), path.c_str());
   if (method == "GET" && path == "/") {
-    newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>ESP8266 print server</h1><a href=\"/wifi\">WiFi configuration</a><br><a href=\"/printerInfo\">Printer Info</a>");
+    newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>ESP8266 print server</h1><a href=\"/wifi\">WiFi configuration</a><br><a href=\"/printerInfo\">Printers</a>");
   } else if (method == "GET" && path == "/printerInfo") {
-    newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n");
-    //newHttpClient.print(printer->getInfo());//TODO
+    newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>Available printers</h1>");
+    for (int i = 0; i < printerCount; i++) {
+      String name = printers[i]->getName();
+      String ip = WiFiManager::getIP();
+      newHttpClient.print("<h2>" + name + "</h2><p>" + printers[i]->getInfo() + "</p><p>Accessible at:</p><ul><li>ipp://" + ip + ":" + String(IPP_SERVER_PORT) + "/" + name + "</li>");
+      if (i == 0) {
+        newHttpClient.print("<li>socket://" + ip + ":" + SOCKET_SERVER_PORT + "</li>");
+      }
+      newHttpClient.print("</ul>");
+    }
   } else if (method == "GET" && path == "/wifi") {
     newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>WiFi configuration</h1><p>Status: ");
     newHttpClient.print(WiFiManager::info());

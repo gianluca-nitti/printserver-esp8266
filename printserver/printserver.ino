@@ -15,15 +15,15 @@
 int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);*/
 
-/*#define LPT_DATA D2
+#define LPT_DATA D2
 #define LPT_LATCH D3
 #define LPT_CLK D4
 #define LPT_BUSY D5
 #define LPT_STROBE D6
-ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);*/
+ShiftRegParallelPortPrinter printer1("parallel", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);
 
-SerialPortPrinter printer1("serial1", &Serial);
-SerialPortPrinter printer2("serial2", &Serial);
+SerialPortPrinter printer2("serial", &Serial);
+
 Printer* printers[] = {&printer1, &printer2};
 #define PRINTER_COUNT 2
 TcpPrintServer server(printers, PRINTER_COUNT);
@@ -35,8 +35,8 @@ void setup() {
   for (int i = 0; i < PRINTER_COUNT; i++) {
     printers[i]->init();
   }
+  Serial.println("initialized printers");
   WiFiManager::wifi_setup();
-  //tcpServer.begin();
   server.start();
   Serial.println("setup ok");
 }

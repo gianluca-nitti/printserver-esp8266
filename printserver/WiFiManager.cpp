@@ -39,6 +39,16 @@ String WiFiManager::info() {
   }
 }
 
+String WiFiManager::getIP() {
+  if (apEnabled) {
+    return WiFi.softAPIP().toString();
+  } else if (WiFi.status() == WL_CONNECTED) {
+    return WiFi.localIP().toString();
+  } else {
+    return "";
+  }
+}
+
 char* WiFiManager::getEncryptionTypeName(int t) {
   //Source: http://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/scan-class.html#encryptiontype
   switch (t) {

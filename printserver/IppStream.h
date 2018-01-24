@@ -53,5 +53,5 @@ class IppStream: public HttpStream {
 
   public:
     IppStream(WiFiClient conn);
-    bool parseRequest(Printer* printer);
+    int parseRequest(Printer** printers, int printerCount);
 };

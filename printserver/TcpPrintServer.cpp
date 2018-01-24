@@ -4,14 +4,16 @@
 #include "IppStream.h"
 #include "TcpPrintServer.h"
 
-TcpPrintServer::TcpPrintServer(Printer* p) : socketServer(SOCKET_SERVER_PORT), ippServer(IPP_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
-  printer = p;
+TcpPrintServer::TcpPrintServer(Printer** _printers, int _printerCount) : socketServer(SOCKET_SERVER_PORT), ippServer(IPP_SERVER_PORT), httpServer(HTTP_SERVER_PORT) {
+  printers = _printers;
+  printerCount = _printerCount;
   for (int i = 0; i < MAXCLIENTS; i++) {
     clients[i] = NULL;
   }
 }
 
 void TcpPrintServer::handleClient(int index) {
+  Printer* printer = printers[clientTargetPrinters[index]];
   if (clients[index]->hasMoreData()) {
     if (clients[index]->dataAvailable() && printer->canPrint(index)) {
       printer->printByte(index, clients[index]->read());
@@ -46,7 +48,8 @@ void TcpPrintServer::processNewSocketClients() {
     if (newClient) {
       Serial.println("Connected: " + newClient.remoteIP().toString() + ":" + newClient.remotePort());
       clients[freeClientSlot] = new TcpStream(newClient);
-      printer->startJob(freeClientSlot);
+      clientTargetPrinters[freeClientSlot] = 0; //TODO
+      printers[0]->startJob(freeClientSlot); //TODO
     }
   }
 }
@@ -56,9 +59,11 @@ void TcpPrintServer::processNewIppClients() {
   if (_ippClient) {
     IppStream* ippClient = new IppStream(_ippClient);
     int freeClientSlot = getFreeClientSlot();
-    if (ippClient->parseRequest(printer) && freeClientSlot != -1) {
+    int targetPrinterIndex = ippClient->parseRequest(printers, printerCount);
+    if (targetPrinterIndex != -1 && freeClientSlot != -1) {
       clients[freeClientSlot] = ippClient;
-      printer->startJob(freeClientSlot);
+      clientTargetPrinters[freeClientSlot] = targetPrinterIndex;
+      printers[targetPrinterIndex]->startJob(freeClientSlot);
     } else {
       delete ippClient;
     }
@@ -82,7 +87,7 @@ void TcpPrintServer::processNewWebClients() {
     newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>ESP8266 print server</h1><a href=\"/wifi\">WiFi configuration</a><br><a href=\"/printerInfo\">Printer Info</a>");
   } else if (method == "GET" && path == "/printerInfo") {
     newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n");
-    newHttpClient.print(printer->getInfo());
+    //newHttpClient.print(printer->getInfo());//TODO
   } else if (method == "GET" && path == "/wifi") {
     newHttpClient.print("HTTP/1.1 200 OK \r\n\r\n<h1>WiFi configuration</h1><p>Status: ");
     newHttpClient.print(WiFiManager::info());

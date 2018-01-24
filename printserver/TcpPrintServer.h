@@ -13,7 +13,9 @@ class TcpPrintServer {
     WiFiServer ippServer;
     WiFiServer httpServer;
     TcpStream* clients[MAXCLIENTS];
-    Printer* printer;
+    int clientTargetPrinters[MAXCLIENTS];
+    Printer** printers;
+    int printerCount;
 
     void handleClient(int index);
 
@@ -22,7 +24,7 @@ class TcpPrintServer {
     void processNewIppClients();
     void processNewWebClients();
   public:
-    TcpPrintServer(Printer* p);
+    TcpPrintServer(Printer** _printers, int _printerCount);
     void start();
     void process();
     void printInfo();

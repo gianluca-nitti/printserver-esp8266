@@ -22,15 +22,19 @@ DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);*/
 #define LPT_STROBE D6
 ShiftRegParallelPortPrinter printer("lpt1", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);*/
 
-SerialPortPrinter printer("serial", &Serial);
-
-TcpPrintServer server(&printer);
+SerialPortPrinter printer1("serial1", &Serial);
+SerialPortPrinter printer2("serial2", &Serial);
+Printer* printers[] = {&printer1, &printer2};
+#define PRINTER_COUNT 2
+TcpPrintServer server(printers, PRINTER_COUNT);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("boot ok");
   SPIFFS.begin();
-  printer.init();
+  for (int i = 0; i < PRINTER_COUNT; i++) {
+    printers[i]->init();
+  }
   WiFiManager::wifi_setup();
   //tcpServer.begin();
   server.start();
@@ -40,7 +44,9 @@ void setup() {
 void loop() {
   printDebugAndYield();
   server.process();
-  printer.processQueue();
+  for (int i = 0; i < PRINTER_COUNT; i++) {
+    printers[i]->processQueue();
+  }
 }
 
 inline void printDebugAndYield() {

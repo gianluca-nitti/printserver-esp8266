@@ -154,13 +154,29 @@ void IppStream::handleGetPrinterAttributesRequest(std::map<String, std::set<Stri
   write(IPP_END_OF_ATTRIBUTES_TAG);
 }
 
-bool IppStream::parseRequest(Printer* printer) {
+int IppStream::parseRequest(Printer** printers, int printerCount) {
   if (!parseRequestHeader()) {
-    return false;
+    return -1;
   }
-  if (getRequestMethod() != "POST" || getRequestPath() != "/") {
-    print("HTTP/1.1 400 Bad Request\r\n");
-    return false;
+
+  if (getRequestMethod() != "POST") {
+    print("HTTP/1.1 405 Method Not Allowed\r\n");
+    return -1;
+  }
+
+  Printer* printer = NULL;
+  int printerIndex = -1;
+  for (int i = 0; i < printerCount; i++) {
+    if (("/" + printers[i]->getName()) == getRequestPath()) {
+      printer = printers[i];
+      printerIndex = i;
+      break;
+    }
+  }
+
+  if (printer == NULL) {
+    print("HTTP/1.1 404 Not Found\r\n");
+    return -1;
   }
 
   uint16_t ippVersion = read2Bytes();
@@ -172,13 +188,13 @@ bool IppStream::parseRequest(Printer* printer) {
     Serial.println("Unsupported IPP version");
     beginResponse(IPP_SERVER_ERROR_VERSION_NOT_SUPPORTED, requestId, "utf-8");
     write(IPP_END_OF_ATTRIBUTES_TAG);
-    return false;
+    return -1;
   }
 
   if (requestId == 0) { //request-id must not be 0 (RFC8011 Section 4.1.2)
     beginResponse(IPP_CLIENT_ERROR_BAD_REQUEST, requestId, "utf-8");
     write(IPP_END_OF_ATTRIBUTES_TAG);
-    return false;
+    return -1;
   }
 
   std::map<String, std::set<String>> requestAttributes = parseRequestAttributes();
@@ -186,7 +202,7 @@ bool IppStream::parseRequest(Printer* printer) {
   if (requestAttributes.size() == 0) {
     beginResponse(IPP_CLIENT_ERROR_BAD_REQUEST, requestId, "utf-8");
     write(IPP_END_OF_ATTRIBUTES_TAG);
-    return false;
+    return -1;
   }
 
   switch (operationId) {
@@ -194,7 +210,7 @@ bool IppStream::parseRequest(Printer* printer) {
       Serial.println("Operation is Get-printer-Attributes");
       beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
       handleGetPrinterAttributesRequest(requestAttributes, printer);
-      return false;
+      return -1;
 
     case IPP_PRINT_JOB:
       Serial.println("Operation is Print-Job");
@@ -206,18 +222,18 @@ bool IppStream::parseRequest(Printer* printer) {
       writeStringAttribute(IPP_VALUE_TAG_KEYWORD, "job-state-reasons", "none");
       write(IPP_END_OF_ATTRIBUTES_TAG);
       flushSendBuffer();
-      return true;
+      return printerIndex;
 
     case IPP_VALIDATE_JOB:
       Serial.println("Operation is Validate-Job");
       beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
       write(IPP_END_OF_ATTRIBUTES_TAG);
-      return false;
+      return -1;
 
     default:
       Serial.println("The requested operation is not supported!");
       beginResponse(IPP_SERVER_ERROR_OPERATION_NOT_SUPPORTED, requestId, "utf-8");
       write(IPP_END_OF_ATTRIBUTES_TAG);
-      return false;
+      return -1;
   }
 }

@@ -20,12 +20,12 @@
 
 ## Wiring diagram for parallel port printer with 74HC595 shift register
 
-[!Image](https://i.imgur.com/lpS5mu0.png)
+![Image](https://i.imgur.com/lpS5mu0.png)
 
 ## Photo with HP DeskJet 840C
 
-[!Image](https://i.imgur.com/ncwKbEl.jpg)
+![Image](https://i.imgur.com/ncwKbEl.jpg)
 
 ## Class diagram
 
-[!Image](https://i.imgur.com/AlZDUHW.png)
+![Image](https://i.imgur.com/AlZDUHW.png)

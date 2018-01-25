@@ -37,7 +37,6 @@ class Printer {
     virtual void printByte(byte b) = 0;
   public:
     void init();
-    bool canAcceptJob(int size);
     void startJob(int clientId);
     void endJob(int clientId, bool cancel);
     bool canPrint(int clientId);

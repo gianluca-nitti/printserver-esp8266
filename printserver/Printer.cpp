@@ -25,10 +25,6 @@ void Printer::init() {
   queue.init();
 }
 
-bool Printer::canAcceptJob(int size) {
-  return true; //TODO
-}
-
 void Printer::startJob(int clientId) {
   if (status == IDLE) {
     status = PRINTING_FROM_SERVER;

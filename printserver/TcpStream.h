@@ -25,13 +25,16 @@
 class TcpStream {
   private:
     WiFiClient tcpConnection;
-    boolean timedOut = false;
+    bool timedOut = false;
     byte sendBuffer[SEND_BUFFER_SIZE];
     int sendBufferIndex = 0;
     void waitAvailable(int numBytes);
 
+  protected:
+    virtual void handleTimeout();
+
   public:
-    TcpStream(WiFiClient tcpConnection);
+    TcpStream(WiFiClient _tcpConnection);
 
     virtual bool hasMoreData();
     virtual bool dataAvailable();
@@ -48,6 +51,5 @@ class TcpStream {
     void print(String s);
     void flushSendBuffer();
 
-    virtual void handleTimeout();
     ~TcpStream();
 };

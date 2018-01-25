@@ -15,6 +15,8 @@
     along with printserver-esp8266.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Settings.h"
+#include "WiFiManager.h"
 #include "IppStream.h"
 
 std::set<String> allPrinterDescriptionAttributes {
@@ -146,7 +148,7 @@ void IppStream::writePrinterAttribute(String name, Printer* printer) {
   } else if (name == "printer-up-time") {
     write4BytesAttribute(IPP_VALUE_TAG_INTEGER, name, millis() / 1000);
   } else if (name == "printer-uri-supported") {
-    writeStringAttribute(IPP_VALUE_TAG_URI, name, "ipp://192.168.1.1"); //TODO
+    writeStringAttribute(IPP_VALUE_TAG_URI, name, "ipp://" + WiFiManager::getIP() + ":" + String(IPP_SERVER_PORT) + "/" + printer->getName());
   } else if (name == "queued-job-count") {
     write4BytesAttribute(IPP_VALUE_TAG_INTEGER, name, 0);
   } else if (name == "uri-authentication-supported") {
@@ -233,8 +235,6 @@ int IppStream::parseRequest(Printer** printers, int printerCount) {
       Serial.println("Operation is Print-Job");
       beginResponse(IPP_SUCCESFUL_OK, requestId, *requestAttributes["attributes-charset"].begin());
       write(IPP_JOB_ATTRIBUTES_TAG);
-      write4BytesAttribute(IPP_VALUE_TAG_INTEGER, "job-id", 123); //TODO
-      writeStringAttribute(IPP_VALUE_TAG_URI, "job-uri", "ipp://hostname/printername/123"); //TODO
       write4BytesAttribute(IPP_VALUE_TAG_ENUM, "job-state", 5); //5 = processing
       writeStringAttribute(IPP_VALUE_TAG_KEYWORD, "job-state-reasons", "none");
       write(IPP_END_OF_ATTRIBUTES_TAG);

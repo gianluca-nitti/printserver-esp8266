@@ -38,11 +38,10 @@ DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);*/
 #define LPT_BUSY D5
 #define LPT_STROBE D6
 ShiftRegParallelPortPrinter printer1("parallel", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);
-
 SerialPortPrinter printer2("serial", &Serial);
-
 Printer* printers[] = {&printer1, &printer2};
-#define PRINTER_COUNT 2
+
+#define PRINTER_COUNT (sizeof(printers) / sizeof(printers[0]))
 TcpPrintServer server(printers, PRINTER_COUNT);
 
 void setup() {

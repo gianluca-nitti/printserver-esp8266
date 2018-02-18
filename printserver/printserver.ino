@@ -18,6 +18,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
+#include <SoftwareSerial.h>
 #include <FS.h>
 
 #include "WiFiManager.h"
@@ -25,6 +26,7 @@
 #include "DirectParallelPortPrinter.h"
 #include "ShiftRegParallelPortPrinter.h"
 #include "SerialPortPrinter.h"
+#include "USBPortPrinter.h"
 #include "PrintQueue.h"
 
 /*#define STROBE 10
@@ -32,12 +34,19 @@
 int DATA[8] = {D0, D1, D2, D3, D4, D5, D6, D7};
 DirectParallelPortPrinter printer("lpt1", DATA, STROBE, BUSY);*/
 
-#define LPT_DATA D2
+/*#define LPT_DATA D2
 #define LPT_LATCH D3
 #define LPT_CLK D4
 #define LPT_BUSY D5
 #define LPT_STROBE D6
-ShiftRegParallelPortPrinter printer1("parallel", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);
+ShiftRegParallelPortPrinter printer1("parallel", LPT_DATA, LPT_CLK, LPT_LATCH, LPT_STROBE, LPT_BUSY);*/
+
+#define CH375_TX D3
+#define CH375_RX D6
+#define CH375_INT D4
+SoftwareSerial ch375swSer(CH375_RX, CH375_TX, false, 32);
+USBPortPrinter printer1("usb", ch375swSer, CH375_INT);
+
 SerialPortPrinter printer2("serial", &Serial);
 Printer* printers[] = {&printer1, &printer2};
 
@@ -46,9 +55,10 @@ TcpPrintServer server(printers, PRINTER_COUNT);
 
 void setup() {
   Serial.begin(115200);
+  ch375swSer.begin(9600); //TODO: probably remove, should be handled by library or by the USBPortPrinter class
   Serial.println("boot ok");
   SPIFFS.begin();
-  for (int i = 0; i < PRINTER_COUNT; i++) {
+  for (unsigned int i = 0; i < PRINTER_COUNT; i++) {
     printers[i]->init();
   }
   Serial.println("initialized printers");
@@ -60,7 +70,7 @@ void setup() {
 void loop() {
   printDebugAndYield();
   server.process();
-  for (int i = 0; i < PRINTER_COUNT; i++) {
+  for (unsigned int i = 0; i < PRINTER_COUNT; i++) {
     printers[i]->processQueue();
   }
 }

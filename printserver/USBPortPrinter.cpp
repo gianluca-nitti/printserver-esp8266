@@ -17,7 +17,7 @@
 
 #include "USBPortPrinter.h"
 
-USBPortPrinter::USBPortPrinter(String _printerId, Stream& ch375stream, int ch375IntPin): Printer(_printerId), ch375(ch375stream, ch375IntPin), printerPort(ch375), isInitialized(false) {
+USBPortPrinter::USBPortPrinter(String _printerId, SoftwareSerial& _ch375stream, int ch375IntPin): Printer(_printerId), ch375stream(_ch375stream), ch375(ch375stream, ch375IntPin), printerPort(ch375), isInitialized(false) {
   pinMode(ch375IntPin, INPUT);
 }
 
@@ -25,6 +25,7 @@ bool USBPortPrinter::ensureInitialized() {
   if (isInitialized) return true;
   if(!ch375.init()) return false;
   if(!printerPort.init()) return false;
+  if(!ch375.setBaudRate(115200, [this](int localBaudRate){ch375stream.begin(115200);})) return false;
   isInitialized = true;
   return true;
 }

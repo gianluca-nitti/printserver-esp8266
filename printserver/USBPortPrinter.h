@@ -16,12 +16,14 @@
  */
 
 #pragma once
+#include <SoftwareSerial.h> //TODO remove
 #include <CH375USBPrinter.h>
 #include <CH375.h>
 #include "Printer.h"
 
 class USBPortPrinter: public Printer {
   private:
+    SoftwareSerial& ch375stream;
     CH375 ch375;
     CH375USBPrinter printerPort;
     bool isInitialized = false;;
@@ -33,6 +35,6 @@ class USBPortPrinter: public Printer {
     bool canPrint();
     void printByte(byte b);
   public:
-    USBPortPrinter(String _printerId, Stream& ch375stream, int ch375IntPin);
+    USBPortPrinter(String _printerId, SoftwareSerial& ch375stream, int ch375IntPin);
     String getInfo();
 };

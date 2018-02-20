@@ -33,6 +33,10 @@ class Printer {
     String name;
   protected:
     Printer(String _printerId);
+    // startJob() and endJob() do nothing by default, and can be overriden if a specifica
+    // type of printer port has specific tasks to do before or after a print job
+    virtual void startJob();
+    virtual void endJob();
     virtual bool canPrint() = 0;
     virtual void printByte(byte b) = 0;
   public:

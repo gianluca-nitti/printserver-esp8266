@@ -24,21 +24,28 @@ USBPortPrinter::USBPortPrinter(String _printerId, SoftwareSerial& _ch375stream, 
 bool USBPortPrinter::ensureInitialized() {
   if (isInitialized) return true;
   if(!ch375.init()) return false;
+  if(!ch375.setBaudRate(115200, [this](){ch375stream.begin(115200);})) return false;
   if(!printerPort.init()) return false;
-  if(!ch375.setBaudRate(115200, [this](int localBaudRate){ch375stream.begin(115200);})) return false;
   isInitialized = true;
   return true;
 }
 
 void USBPortPrinter::flushBuffer() {
   if(ensureInitialized()) {
-    if(printerPort.sendData(buffer, 64)) {
-      Serial.println("OK, packet sent");
+    if(printerPort.sendData(buffer, bufferIndex)) {
+      //If this line is removed, various transfer errors happen
+      //This is due to timing issues (without the Serial.println, packates are sent too fast)
+      //TODO: do more research about the chip's timing limits and fix the CH375 library
+      Serial.println("USB packet sent correctly!");
     } else {
       Serial.println("Failed to send USB packet!");
     }
   }
   bufferIndex = 0;
+}
+
+void USBPortPrinter::endJob() {
+  flushBuffer();
 }
 
 bool USBPortPrinter::canPrint() {

@@ -25,10 +25,17 @@ void Printer::init() {
   queue.init();
 }
 
+void Printer::startJob() {
+}
+
+void Printer::endJob() {
+}
+
 void Printer::startJob(int clientId) {
   if (status == IDLE) {
     status = PRINTING_FROM_SERVER;
     printingClientId = clientId;
+    startJob();
   } else {
     queue.startJob(clientId);
   }
@@ -37,6 +44,7 @@ void Printer::startJob(int clientId) {
 void Printer::endJob(int clientId, bool cancel) {
   if (status == PRINTING_FROM_SERVER && printingClientId == clientId) {
     status = IDLE;
+    endJob();
   } else {
     queue.endJob(clientId, cancel);
   }

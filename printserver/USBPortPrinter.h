@@ -32,6 +32,7 @@ class USBPortPrinter: public Printer {
     bool ensureInitialized();
     void flushBuffer();
   protected:
+    void endJob();
     bool canPrint();
     void printByte(byte b);
   public:

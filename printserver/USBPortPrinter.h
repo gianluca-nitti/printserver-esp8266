@@ -26,12 +26,10 @@ class USBPortPrinter: public Printer {
     SoftwareSerial& ch375stream;
     CH375 ch375;
     CH375USBPrinter printerPort;
-    bool isInitialized = false;;
-    byte buffer[64]; //TODO: retrieve size from library and initialize dinamically on heap
-    byte bufferIndex = 0;
+    bool isInitialized = false;
     bool ensureInitialized();
-    void flushBuffer();
   protected:
+    void startJob();
     void endJob();
     bool canPrint();
     void printByte(byte b);

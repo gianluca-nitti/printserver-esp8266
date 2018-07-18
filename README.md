@@ -7,6 +7,7 @@
 * It's mainly aimed at parallel port printers, which can be connected in two different ways:
 	* Directly (uses 10 GPIO pins - one for BUSY, one for STROBE and 8 for the data lines)
 	* Using a shift register, which reduces the amount of required pins to 5 (BUSY, STROBE, and 3 to drive the shift register to which the data lines are connected; currently tested with a 74HC595)
+* Also supports USB printers through the USB host chip CH375 and a custom [library](https://github.com/gianluca-nitti/CH375-Arduino)
 * Experimental support for serial printers (not tested with real ones, only with the serial monitor)
 * If the device fails to connect to the latest used WiFi network (for example the first time you flash the sketch), it will start an access point you can connect to. The web interface can then be used to select the network you want to connect the device to.
 

@@ -1,3 +1,11 @@
+### Note: Library update required
+
+If you are getting the following compile error:
+
+```no matching function for call to 'CH375::setBaudRate(int, USBPortPrinter::ensureInitialized()::__lambda0)```
+
+you need to update the [CH375-Arduino](https://github.com/gianluca-nitti/CH375-Arduino) library to the [`6a78463`](https://github.com/gianluca-nitti/CH375-Arduino/commit/6a7846306f029d99621b5b8d5f409cc859f955e2) commit.
+
 # printserver-esp8266
 
 * This project allows you to use an ESP8266 as a Wi-Fi print server.

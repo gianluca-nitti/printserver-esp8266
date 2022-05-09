@@ -29,7 +29,9 @@ you need to update the [CH375-Arduino](https://github.com/gianluca-nitti/CH375-A
 
 ## Wiring diagram for parallel port printer with 74HC595 shift register
 
-![Image](https://i.imgur.com/lpS5mu0.png)
+![Image](fritzing-parallel_bb.png)
+
+As kindly reported in [issue #18](https://github.com/gianluca-nitti/printserver-esp8266/issues/18) (read the linked discussion for more details), a couple of improvements can be made to this schematic. In particular, the BUSY signal from the printer can be converted fom 5V to 3.3V, for example by making a simple voltage divider with a couple of resistors of appropriate value, to further protect the ESP8266 input pin. It's not 100% clear whether it's 5V tolerant.
 
 ## Photo with HP DeskJet 840C
 
